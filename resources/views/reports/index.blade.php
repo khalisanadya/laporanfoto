@@ -7,24 +7,23 @@
 
   <style>
   :root{
-   
-    --bg:#f9fafb;             
-    --card:#ffffff;            
-    --border:#e5e7eb;           
-    --text:#111827;            
-    --muted:#6b7280;          
-    --muted2:#9ca3af;          
+    --bg:#f9fafb;
+    --card:#ffffff;
+    --border:#e5e7eb;
+    --text:#111827;
+    --muted:#6b7280;
+    --muted2:#9ca3af;
 
-    --danger-bg:#fef2f2;       
-    --danger-border:#fecaca;    
+    --danger-bg:#fef2f2;
+    --danger-border:#fecaca;
 
-    --focus:#2563eb;            
+    --focus:#2563eb;
     --focus-ring: rgba(37,99,235,.15);
 
-    --btn:#2563eb;              
-    --btn-hover:#1d4ed8;        
+    --btn:#2563eb;
+    --btn-hover:#1d4ed8;
 
-    --soft:#f3f4f6;             
+    --soft:#f3f4f6;
     --shadow: 0 1px 2px rgba(0,0,0,.05);
     --shadow-hover: 0 8px 24px rgba(17,24,39,.08);
     --radius: 16px;
@@ -139,7 +138,7 @@
   }
   .row:hover{
     box-shadow: var(--shadow-hover);
-    border-color: #dbeafe; 
+    border-color: #dbeafe;
   }
 
   .row-head{
@@ -177,17 +176,25 @@
     gap:12px;
     align-items:start;
   }
+
   @media (min-width: 980px){
-    .row-grid{ grid-template-columns: 1.2fr .8fr; }
+    .row-grid{
+      grid-template-columns: 1.2fr .8fr;
+    }
+
+    /* bikin dokumentasi foto di tengah secara vertikal */
+    .row-right{
+      align-self: center;
+    }
   }
 
   .row-left{display:grid;gap:10px}
 
   .row-right{
-    border:1px dashed #cbd5e1; 
+    border:1px dashed #cbd5e1;
     border-radius:14px;
     padding:12px;
-    background: #f8fafc;      
+    background: #f8fafc;
   }
 
   .two{
@@ -265,17 +272,16 @@
     font-weight:800;
     padding:6px 10px;
     border-radius:999px;
-    border:1px solid #dbeafe; 
-    background:#eff6ff;        
-    color:#1d4ed8;             
+    border:1px solid #dbeafe;
+    background:#eff6ff;
+    color:#1d4ed8;
   }
 
   .hint{font-size:11px;color:var(--muted);margin-top:6px}
-
   .sep{height:1px;background:var(--border);margin:10px 0}
-</style>
-
+  </style>
 </head>
+
 <body>
 <div class="wrap">
   <div class="top">
@@ -333,13 +339,12 @@
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
         <div>
           <div class="section-title" style="margin-bottom:4px">Checklist Kondisi</div>
-        
         </div>
         <button type="button" id="addRowBtn" class="btn" style="padding:10px 12px">+ Tambah Checklist</button>
       </div>
 
       <div class="rows" id="rows">
-        {{-- default 4 baris KOSONG (sesuai request kamu) --}}
+        {{-- default 4 baris KOSONG --}}
         @php $initial = old('items') ?? array_fill(0, 4, ['deskripsi'=>'','kondisi'=>'','catatan'=>'']); @endphp
 
         @foreach($initial as $idx => $row)
@@ -354,7 +359,10 @@
               <div class="row-left">
                 <div class="field">
                   <label>Deskripsi</label>
-                  <input name="items[{{ $idx }}][deskripsi]" value="{{ old("items.$idx.deskripsi", $row['deskripsi'] ?? '') }}" placeholder="Isi deskripsi..." required>
+              
+                  <input name="items[{{ $idx }}][deskripsi]"
+                         value="{{ old("items.$idx.deskripsi", $row['deskripsi'] ?? '') }}"
+                         placeholder="Isi deskripsi...">
                 </div>
 
                 <div class="two">
@@ -369,14 +377,16 @@
 
                   <div class="field">
                     <label>Catatan</label>
-                    <input name="items[{{ $idx }}][catatan]" value="{{ old("items.$idx.catatan", $row['catatan'] ?? '') }}" placeholder="Catatan...">
+                    <input name="items[{{ $idx }}][catatan]"
+                           value="{{ old("items.$idx.catatan", $row['catatan'] ?? '') }}"
+                           placeholder="Catatan...">
                   </div>
                 </div>
               </div>
 
               {{-- RIGHT: photo uploader for this row --}}
               <div class="row-right">
-                <label>Dokumentasi Foto </label>
+                <label>Dokumentasi Foto</label>
                 <input class="photosInput" type="file" name="item_photos[{{ $idx }}][]" multiple accept="image/*">
                 <div class="preview-grid previews"></div>
               </div>
@@ -401,12 +411,11 @@
       row.dataset.row = i;
       row.querySelectorAll('.rowNo, .rowNo2').forEach(el => el.textContent = (i+1));
 
-      // update input names to keep indexes tidy
+      
       row.querySelectorAll('input, select, textarea').forEach(inp => {
         const name = inp.getAttribute('name');
         if (!name) return;
 
-        // items[OLD] -> items[NEW]
         inp.setAttribute('name', name
           .replace(/items\[\d+\]/g, `items[${i}]`)
           .replace(/item_photos\[\d+\]/g, `item_photos[${i}]`)
@@ -436,7 +445,7 @@
       renumber();
     });
 
-    // per-row photo preview + caption/section
+    // per-row photo preview + caption
     const input = row.querySelector('.photosInput');
     const previews = row.querySelector('.previews');
 
@@ -454,8 +463,27 @@
     });
   }
 
-  // hook existing rows
+
   [...rowsEl.querySelectorAll('.row')].forEach(hookRow);
+
+ 
+  document.querySelector('form').addEventListener('submit', () => {
+    const rows = [...document.querySelectorAll('#rows .row')];
+
+    rows.forEach(row => {
+      const des = row.querySelector('input[name*="[deskripsi]"]')?.value?.trim() || '';
+      const kon = row.querySelector('select[name*="[kondisi]"]')?.value?.trim() || '';
+      const cat = row.querySelector('input[name*="[catatan]"]')?.value?.trim() || '';
+      const fileInput = row.querySelector('.photosInput');
+      const hasFiles = fileInput && fileInput.files && fileInput.files.length > 0;
+
+      const isEmpty = !des && !kon && !cat && !hasFiles;
+
+      if (isEmpty) {
+        row.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+      }
+    });
+  });
 
   // add new row
   addBtn.addEventListener('click', () => {
@@ -474,7 +502,8 @@
         <div class="row-left">
           <div class="field">
             <label>Deskripsi</label>
-            <input name="items[${idx}][deskripsi]" value="" placeholder="Isi deskripsi..." required>
+           
+            <input name="items[${idx}][deskripsi]" value="" placeholder="Isi deskripsi...">
           </div>
 
           <div class="two">
@@ -497,7 +526,6 @@
         <div class="row-right">
           <label>Dokumentasi Foto (Item #<span class="rowNo2">${idx+1}</span>)</label>
           <input class="photosInput" type="file" name="item_photos[${idx}][]" multiple accept="image/*">
-          <div class="hint">Pilih banyak foto. Setelah itu akan muncul input caption + section untuk tiap foto.</div>
           <div class="preview-grid previews"></div>
         </div>
       </div>
