@@ -5,7 +5,7 @@
   <title>Report Kegiatan</title>
 
   <style>
-    @page { margin: 26px 26px; }
+    @page { margin: 30px 30px; }
 
     body {
       font-family: DejaVu Sans, sans-serif;
@@ -14,7 +14,7 @@
     }
 
     /* Header */
-    .title-wrap { text-align: center; margin-bottom: 14px; }
+    .title-wrap { text-align: center; margin-bottom: 25px; }
     .title { font-size: 18px; font-weight: 800; letter-spacing: .4px; }
     .muted { color: #6b7280; font-size: 10px; }
 
@@ -32,68 +32,65 @@
       background: #f3f4f6;
     }
 
-    .section { margin-top: 14px; }
+    .section { margin-top: 35px; } 
     .section-title {
       font-weight: 900;
-      font-size: 13px;
-      margin-bottom: 8px;
+      font-size: 16px;
+      margin-bottom: 12px;
       color: #111827;
     }
 
-    .check th, .check td { border: 1px solid #111827; padding: 7px 7px; }
+    .check th, .check td { border: 1px solid #111827; padding: 8px 8px; }
     .check th {
       background: #f3f4f6;
       font-weight: 900;
       text-align: center;
     }
-    .check td { vertical-align: top; }
+    .check td { vertical-align: middle; }
+
     .center { text-align: center; }
     .no { width: 40px; text-align: center; font-weight: 800; }
     .desc { width: 52%; }
-    .cond { width: 90px; text-align: center; font-weight: 800; }
+    .cond { width: 90px; text-align: center; font-size: 14px; } 
     .note { width: 26%; }
 
-    .footer { margin-top: 10px; font-size: 10px; color: #6b7280; text-align: right; }
-    .page-break { page-break-after: always; }
+    .footer { margin-top: 25px; font-size: 10px; color: #6b7280; text-align: right; }
 
-   
+    /* FOTO */
     .photo-grid { width: 100%; border-collapse: collapse; margin-top: 10px; }
     .photo-cell {
       border: 1px solid #111827;
-      padding: 8px;
+      padding: 15px;
       vertical-align: top;
       background: #ffffff;
     }
 
-
-    .photo-frame{
+    .photo-wrap{
+      height: 240px;
+      display: table;
       width: 100%;
-      height: 220px;              
-      border: 1px solid #d1d5db;
-      background: #f9fafb;
-      display: block;
+    }
+    .photo-wrap-inner{
+      display: table-cell;
+      vertical-align: middle;
       text-align: center;
-      padding: 6px;
     }
 
-    
     .photo-img{
       max-width: 100%;
-      max-height: 208px;         
-      height: auto;
+      max-height: 220px;
       width: auto;
+      height: auto;
       display: inline-block;
     }
 
     .cap {
-      margin-top: 8px;
-      font-size: 10px;
-      font-weight: 800;
+      margin-top: 1px;
+      font-size: 14px;
+      font-weight: 300;
       text-align: center;
       color: #111827;
     }
-
-    .tight { margin-top: 6px; }
   </style>
 </head>
 
@@ -102,7 +99,6 @@
   {{-- HEADER --}}
   <div class="title-wrap">
     <div class="title">REPORT KEGIATAN</div>
-  
   </div>
 
   {{-- INFO --}}
@@ -149,10 +145,13 @@
             <td class="no">{{ $item->no }}</td>
             <td class="desc">{{ $item->deskripsi ?? '-' }}</td>
 
-
-
-            <td class="cond center">{{ $item->kondisi === 'baik' ? '✓' : '' }}</td>
-            <td class="cond center">{{ $item->kondisi === 'problem' ? '✓' : '' }}</td>
+            
+            <td class="cond center">
+                {!! (strtolower($item->kondisi) === 'baik') ? '&#10003;' : '' !!}
+            </td>
+            <td class="cond center">
+                {!! (strtolower($item->kondisi) === 'problem') ? '&#10003;' : '' !!}
+            </td>
 
             <td class="note">{{ $item->catatan ?? '-' }}</td>
           </tr>
@@ -167,7 +166,8 @@
 
   {{-- DOKUMENTASI --}}
   @if($report->photos && $report->photos->count())
-    <div class="section tight">
+  
+    <div class="section">
       <div class="section-title">Dokumentasi</div>
 
       <table class="photo-grid">
@@ -175,13 +175,14 @@
           <tr>
             @foreach($row as $photo)
               <td class="photo-cell" style="width:50%;">
-                <div class="photo-frame">
-                  
-                  <img
-                    class="photo-img"
-                    src="{{ public_path('storage/'.$photo->photo_path) }}"
-                    alt="foto"
-                  >
+                <div class="photo-wrap">
+                  <div class="photo-wrap-inner">
+                    <img
+                      class="photo-img"
+                      src="{{ public_path('storage/'.$photo->photo_path) }}"
+                      alt="foto"
+                    >
+                  </div>
                 </div>
 
                 <div class="cap">
@@ -190,7 +191,6 @@
               </td>
             @endforeach
 
-            {{-- kalau ganjil, isi kolom kosong biar 2 kolom tetap rapi --}}
             @if($row->count() === 1)
               <td class="photo-cell" style="width:50%; border:0;"></td>
             @endif
