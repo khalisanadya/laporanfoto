@@ -182,7 +182,7 @@
       grid-template-columns: 1.2fr .8fr;
     }
 
-    /* bikin dokumentasi foto di tengah secara vertikal */
+  
     .row-right{
       align-self: center;
     }
@@ -344,7 +344,7 @@
       </div>
 
       <div class="rows" id="rows">
-        {{-- default 4 baris KOSONG --}}
+       
         @php $initial = old('items') ?? array_fill(0, 4, ['deskripsi'=>'','kondisi'=>'','catatan'=>'']); @endphp
 
         @foreach($initial as $idx => $row)
@@ -355,7 +355,7 @@
             </div>
 
             <div class="row-grid">
-              {{-- LEFT: checklist fields --}}
+            
               <div class="row-left">
                 <div class="field">
                   <label>Deskripsi</label>
@@ -384,7 +384,7 @@
                 </div>
               </div>
 
-              {{-- RIGHT: photo uploader for this row --}}
+              
               <div class="row-right">
                 <label>Dokumentasi Foto</label>
                 <input class="photosInput" type="file" name="item_photos[{{ $idx }}][]" multiple accept="image/*">
@@ -439,13 +439,13 @@
   }
 
   function hookRow(row) {
-    // remove row
+    
     row.querySelector('.removeRowBtn').addEventListener('click', () => {
       row.remove();
       renumber();
     });
 
-    // per-row photo preview + caption
+    
     const input = row.querySelector('.photosInput');
     const previews = row.querySelector('.previews');
 
@@ -485,7 +485,6 @@
     });
   });
 
-  // add new row
   addBtn.addEventListener('click', () => {
     const idx = rowsEl.querySelectorAll('.row').length;
 
