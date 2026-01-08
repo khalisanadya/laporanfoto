@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Report Kegiatan</title>
+  <title>Laporan Kegiatan</title>
 
   <style>
     @page { margin: 30px 30px; }
@@ -50,9 +50,10 @@
 
     .center { text-align: center; }
     .no { width: 40px; text-align: center; font-weight: 800; }
-    .desc { width: 52%; }
+    
+    .desc { width: 35%; }
     .cond { width: 90px; text-align: center; font-size: 14px; } 
-    .note { width: 26%; }
+    .note { width: 43%; } 
 
     .footer { margin-top: 25px; font-size: 10px; color: #6b7280; text-align: right; }
 
@@ -145,7 +146,6 @@
             <td class="no">{{ $item->no }}</td>
             <td class="desc">{{ $item->deskripsi ?? '-' }}</td>
 
-            
             <td class="cond center">
                 {!! (strtolower($item->kondisi) === 'baik') ? '&#10003;' : '' !!}
             </td>
