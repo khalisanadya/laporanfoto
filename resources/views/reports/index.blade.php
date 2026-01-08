@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Laporan Kegiatan</title>
+  <title>Report Kegiatan</title>
 
   <style>
   :root{
@@ -305,7 +305,7 @@
 
     {{-- INFO --}}
     <div class="card">
-      <div class="section-title">Info Kegiatan</div>
+      <div class="section-title">Informasi Kegiatan</div>
 
       <div class="grid-2">
         <div>
@@ -350,7 +350,7 @@
         @foreach($initial as $idx => $row)
           <div class="row" data-row="{{ $idx }}">
             <div class="row-head">
-              <div class="row-title">Item #<span class="rowNo">{{ $idx+1 }}</span></div>
+              <div class="row-title">Item <span class="rowNo">{{ $idx+1 }}</span></div>
               <button type="button" class="mini-btn removeRowBtn">Hapus</button>
             </div>
 
