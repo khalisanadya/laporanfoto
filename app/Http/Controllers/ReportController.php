@@ -20,7 +20,7 @@ class ReportController extends Controller
         'Report',
     ];
 
-    return view('reports.index', compact('defaultItems'));
+    return view('reports.report-kegiatan', compact('defaultItems'));
 }
 
     public function store(Request $request)
@@ -106,7 +106,7 @@ class ReportController extends Controller
     public function show(Report $report)
     {
         $report->load(['items', 'photos']);
-        return view('reports.pdf', compact('report'));
+        return view('reports.pdf-report-kegiatan', compact('report'));
     }
 
     public function pdf(Report $report)
@@ -114,7 +114,7 @@ class ReportController extends Controller
         $report->load(['items', 'photos']);
         $downloadedAt = now()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB';
 
-        $pdf = Pdf::loadView('reports.pdf', [
+        $pdf = Pdf::loadView('reports.pdf-report-kegiatan', [
             'report' => $report,
             'downloadedAt' => $downloadedAt,
         ])->setPaper('a4', 'portrait');
