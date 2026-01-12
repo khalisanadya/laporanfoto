@@ -252,12 +252,8 @@
             <td class="no">{{ $item->no }}</td>
             <td class="desc">{{ $item->deskripsi ?? '-' }}</td>
 
-            <td class="cond center">
-                <span class="cond-baik">{!! (strtolower($item->kondisi) === 'baik') ? '✓' : '' !!}</span>
-            </td>
-            <td class="cond center">
-                <span class="cond-problem">{!! (strtolower($item->kondisi) === 'problem') ? '✗' : '' !!}</span>
-            </td>
+            <td class="cond center">{{ $item->kondisi === 'baik' ? '√' : '' }}</td>
+            <td class="cond center">{{ $item->kondisi === 'problem' ? '√' : '' }}</td>
 
             <td class="note">{{ $item->catatan ?? '-' }}</td>
           </tr>
