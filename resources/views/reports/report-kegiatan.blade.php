@@ -508,7 +508,7 @@
     font-size: 12px;
   }
 
-  /* File input styling */
+  
   input[type="file"]{
     padding: 10px;
     background: #fff;
