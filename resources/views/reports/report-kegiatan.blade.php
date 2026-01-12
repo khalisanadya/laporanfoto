@@ -553,7 +553,6 @@
 <div class="main-content">
   <div class="page-intro">
     <h1>Form Report Kegiatan</h1>
-    <p>Lengkapi informasi kegiatan dan checklist kondisi di bawah ini dengan lengkap.</p>
   </div>
 
   @if ($errors->any())
@@ -576,7 +575,6 @@
         <div class="card-icon">i</div>
         <div>
           <div class="section-title">Informasi Kegiatan</div>
-          <div class="section-desc">Data umum mengenai kegiatan yang dilaporkan</div>
         </div>
       </div>
 
@@ -615,7 +613,6 @@
           <div class="checklist-header">
             <div>
               <div class="section-title">Checklist Kondisi</div>
-              <div class="section-desc">Daftar item yang perlu dicek beserta dokumentasinya</div>
             </div>
             <button type="button" id="addRowBtn" class="btn btn-add">+ Tambah Item</button>
           </div>
