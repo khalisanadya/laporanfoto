@@ -12,42 +12,53 @@ class ReportController extends Controller
 {
     public function dashboard(Request $request)
     {
-        $deviceId = $request->input('device_id');
+        $myReportIds = $request->input('my_report_ids', []);
         
-        $totalReports = Report::where('device_id', $deviceId)->count();
-        
-        $kondisiBaik = ReportItem::whereHas('report', function($q) use ($deviceId) {
-            $q->where('device_id', $deviceId);
-        })->where('kondisi', 'baik')->count();
-        
-        $kondisiProblem = ReportItem::whereHas('report', function($q) use ($deviceId) {
-            $q->where('device_id', $deviceId);
-        })->where('kondisi', 'problem')->count();
-        
-        $bulanIni = Report::where('device_id', $deviceId)
-            ->whereMonth('created_at', now()->month)
-            ->whereYear('created_at', now()->year)
-            ->count();
+        if (empty($myReportIds)) {
+            $totalReports = 0;
+            $kondisiBaik = 0;
+            $kondisiProblem = 0;
+            $bulanIni = 0;
+            $recentReports = collect();
+        } else {
+            $totalReports = Report::whereIn('id', $myReportIds)->count();
             
-        $recentReports = Report::where('device_id', $deviceId)->latest()->take(5)->get();
+            $kondisiBaik = ReportItem::whereIn('report_id', $myReportIds)
+                ->where('kondisi', 'baik')->count();
+            
+            $kondisiProblem = ReportItem::whereIn('report_id', $myReportIds)
+                ->where('kondisi', 'problem')->count();
+            
+            $bulanIni = Report::whereIn('id', $myReportIds)
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->count();
+                
+            $recentReports = Report::whereIn('id', $myReportIds)->latest()->take(5)->get();
+        }
         
         return view('dashboard', compact('totalReports', 'kondisiBaik', 'kondisiProblem', 'bulanIni', 'recentReports'));
     }
 
     public function riwayat(Request $request)
     {
-        $deviceId = $request->input('device_id');
-        $query = Report::where('device_id', $deviceId)->latest();
+        $myReportIds = $request->input('my_report_ids', []);
         
-        if ($request->search) {
-            $query->where(function($q) use ($request) {
-                $q->where('nama_kegiatan', 'like', '%' . $request->search . '%')
-                  ->orWhere('jenis_kegiatan', 'like', '%' . $request->search . '%')
-                  ->orWhere('lokasi_kegiatan', 'like', '%' . $request->search . '%');
-            });
+        if (empty($myReportIds)) {
+            $reports = Report::whereRaw('1 = 0')->paginate(10); // Empty result
+        } else {
+            $query = Report::whereIn('id', $myReportIds)->latest();
+            
+            if ($request->search) {
+                $query->where(function($q) use ($request) {
+                    $q->where('nama_kegiatan', 'like', '%' . $request->search . '%')
+                      ->orWhere('jenis_kegiatan', 'like', '%' . $request->search . '%')
+                      ->orWhere('lokasi_kegiatan', 'like', '%' . $request->search . '%');
+                });
+            }
+            
+            $reports = $query->paginate(10)->withQueryString();
         }
-        
-        $reports = $query->paginate(10)->withQueryString();
         
         return view('reports.riwayat', compact('reports'));
     }
@@ -96,7 +107,6 @@ class ReportController extends Controller
 
     
         $report = Report::create([
-            'device_id'       => $request->input('device_id'),
             'nama_kegiatan'   => $validated['nama_kegiatan'] ?? null,
             'waktu_kegiatan'  => $validated['waktu_kegiatan'] ?? null,
             'jenis_kegiatan'  => $validated['jenis_kegiatan'] ?? null,
@@ -143,7 +153,13 @@ class ReportController extends Controller
             }
         }
 
-        return redirect()->route('reports.pdf', $report);
+        // Add report ID to my_reports cookie
+        $myReportIds = $request->input('my_report_ids', []);
+        $myReportIds[] = $report->id;
+        $cookieValue = implode(',', $myReportIds);
+        
+        return redirect()->route('reports.pdf', $report)
+            ->cookie('my_reports', $cookieValue, 525600, '/', null, false, false);
     }
 
     public function show(Report $report)
@@ -160,8 +176,201 @@ class ReportController extends Controller
         $pdf = Pdf::loadView('reports.pdf-report-kegiatan', [
             'report' => $report,
             'downloadedAt' => $downloadedAt,
+            'forPdf' => true,
         ])->setPaper('a4', 'portrait');
 
         return $pdf->download("REPORT-{$report->id}.pdf");
+    }
+
+    public function word(Report $report)
+    {
+        $report->load(['items', 'photos']);
+
+        $phpWord = new \PhpOffice\PhpWord\PhpWord();
+        
+        // Set default font
+        $phpWord->setDefaultFontName('Arial');
+        $phpWord->setDefaultFontSize(11);
+
+        // Define styles
+        $phpWord->addTitleStyle(1, ['bold' => true, 'size' => 18, 'color' => '0369a1'], ['alignment' => 'center', 'spaceAfter' => 240]);
+        $phpWord->addTitleStyle(2, ['bold' => true, 'size' => 13, 'color' => '1e293b'], ['spaceBefore' => 240, 'spaceAfter' => 120]);
+
+        $section = $phpWord->addSection([
+            'marginTop' => 1000,
+            'marginBottom' => 1000,
+            'marginLeft' => 1200,
+            'marginRight' => 1200,
+        ]);
+
+        // Header with blue background
+        $headerTable = $section->addTable(['borderSize' => 0]);
+        $headerTable->addRow(800);
+        $headerCell = $headerTable->addCell(9000, ['bgColor' => '0369a1', 'valign' => 'center']);
+        $headerCell->addText('LAPORAN KEGIATAN', ['bold' => true, 'size' => 20, 'color' => 'FFFFFF'], ['alignment' => 'center', 'spaceBefore' => 150, 'spaceAfter' => 150]);
+
+        $section->addTextBreak(1);
+
+        // Info Kegiatan Section
+        $section->addText('INFORMASI KEGIATAN', ['bold' => true, 'size' => 13, 'color' => '0369a1'], ['spaceBefore' => 200, 'spaceAfter' => 150]);
+
+        $infoTableStyle = [
+            'borderSize' => 6,
+            'borderColor' => 'E2E8F0',
+            'cellMargin' => 80,
+        ];
+        $infoTable = $section->addTable($infoTableStyle);
+        
+        $labelStyle = ['bold' => true, 'size' => 11, 'color' => '475569'];
+        $valueStyle = ['size' => 11, 'color' => '1e293b'];
+        $cellLabel = ['bgColor' => 'F8FAFC', 'valign' => 'center'];
+        $cellValue = ['valign' => 'center'];
+
+        $infoData = [
+            ['Nama Kegiatan', $report->nama_kegiatan ?? '-'],
+            ['Waktu Kegiatan', $report->waktu_kegiatan ?? '-'],
+            ['Jenis Kegiatan', $report->jenis_kegiatan ?? '-'],
+            ['Lokasi Kegiatan', $report->lokasi_kegiatan ?? '-'],
+        ];
+
+        foreach ($infoData as $row) {
+            $infoTable->addRow(400);
+            $infoTable->addCell(2800, $cellLabel)->addText($row[0], $labelStyle, ['spaceAfter' => 0]);
+            $infoTable->addCell(6200, $cellValue)->addText($row[1], $valueStyle, ['spaceAfter' => 0]);
+        }
+
+        $section->addTextBreak(1);
+
+        // Checklist Kondisi Section
+        $section->addText('CHECKLIST KONDISI', ['bold' => true, 'size' => 13, 'color' => '0369a1'], ['spaceBefore' => 200, 'spaceAfter' => 150]);
+
+        $checkTableStyle = [
+            'borderSize' => 6,
+            'borderColor' => 'E2E8F0',
+            'cellMargin' => 80,
+        ];
+        $checkTable = $section->addTable($checkTableStyle);
+        
+        // Header row
+        $headerCellStyle = ['bgColor' => '0369a1', 'valign' => 'center'];
+        $headerTextStyle = ['bold' => true, 'size' => 10, 'color' => 'FFFFFF'];
+        
+        $checkTable->addRow(400);
+        $checkTable->addCell(600, $headerCellStyle)->addText('No', $headerTextStyle, ['alignment' => 'center', 'spaceAfter' => 0]);
+        $checkTable->addCell(3200, $headerCellStyle)->addText('Deskripsi', $headerTextStyle, ['spaceAfter' => 0]);
+        $checkTable->addCell(900, $headerCellStyle)->addText('Baik', $headerTextStyle, ['alignment' => 'center', 'spaceAfter' => 0]);
+        $checkTable->addCell(900, $headerCellStyle)->addText('Problem', $headerTextStyle, ['alignment' => 'center', 'spaceAfter' => 0]);
+        $checkTable->addCell(3400, $headerCellStyle)->addText('Catatan', $headerTextStyle, ['spaceAfter' => 0]);
+
+        // Data rows
+        $rowNum = 0;
+        foreach ($report->items as $item) {
+            $rowNum++;
+            $rowBg = $rowNum % 2 == 0 ? 'F8FAFC' : 'FFFFFF';
+            $rowCellStyle = ['bgColor' => $rowBg, 'valign' => 'center'];
+            
+            $baikMark = $item->kondisi === 'baik' ? '✓' : '';
+            $problemMark = $item->kondisi === 'problem' ? '✓' : '';
+            
+            $checkTable->addRow(350);
+            $checkTable->addCell(600, $rowCellStyle)->addText($item->no, ['size' => 10], ['alignment' => 'center', 'spaceAfter' => 0]);
+            $checkTable->addCell(3200, $rowCellStyle)->addText($item->deskripsi ?? '-', ['size' => 10], ['spaceAfter' => 0]);
+            $checkTable->addCell(900, $rowCellStyle)->addText($baikMark, ['size' => 12, 'bold' => true, 'color' => '10b981'], ['alignment' => 'center', 'spaceAfter' => 0]);
+            $checkTable->addCell(900, $rowCellStyle)->addText($problemMark, ['size' => 12, 'bold' => true, 'color' => 'ef4444'], ['alignment' => 'center', 'spaceAfter' => 0]);
+            $checkTable->addCell(3400, $rowCellStyle)->addText($item->catatan ?? '-', ['size' => 10, 'color' => '64748b'], ['spaceAfter' => 0]);
+        }
+
+        $section->addTextBreak(1);
+
+        // Dokumentasi Foto Section
+        if ($report->photos->count() > 0) {
+            $section->addText('DOKUMENTASI FOTO', ['bold' => true, 'size' => 13, 'color' => '0369a1'], ['spaceBefore' => 200, 'spaceAfter' => 150]);
+
+            $photoTableStyle = [
+                'borderSize' => 6,
+                'borderColor' => 'E2E8F0',
+                'cellMargin' => 100,
+            ];
+            
+            // 2 photos per row
+            $photos = $report->photos->values();
+            $photoCount = $photos->count();
+            
+            for ($i = 0; $i < $photoCount; $i += 2) {
+                $photoTable = $section->addTable($photoTableStyle);
+                $photoTable->addRow();
+                
+                // First photo
+                $photo1 = $photos[$i];
+                $photoPath1 = public_path('storage/' . $photo1->photo_path);
+                $cell1 = $photoTable->addCell(4500, ['valign' => 'top', 'bgColor' => 'FFFFFF']);
+                
+                if (file_exists($photoPath1)) {
+                    // Get image dimensions to maintain aspect ratio
+                    $imgSize1 = @getimagesize($photoPath1);
+                    $imgWidth1 = 140;
+                    if ($imgSize1 && $imgSize1[0] > 0) {
+                        $ratio1 = $imgSize1[1] / $imgSize1[0];
+                        $imgHeight1 = $imgWidth1 * $ratio1;
+                    } else {
+                        $imgHeight1 = 105;
+                    }
+                    $cell1->addImage($photoPath1, [
+                        'width' => $imgWidth1,
+                        'height' => $imgHeight1,
+                        'alignment' => 'center',
+                        'wrappingStyle' => 'inline',
+                    ]);
+                }
+                $cell1->addText($photo1->caption ?? 'Dokumentasi', ['size' => 9, 'italic' => true, 'color' => '64748b'], ['alignment' => 'center', 'spaceBefore' => 100]);
+                
+                // Second photo (if exists)
+                if (isset($photos[$i + 1])) {
+                    $photo2 = $photos[$i + 1];
+                    $photoPath2 = public_path('storage/' . $photo2->photo_path);
+                    $cell2 = $photoTable->addCell(4500, ['valign' => 'top', 'bgColor' => 'FFFFFF']);
+                    
+                    if (file_exists($photoPath2)) {
+                        // Get image dimensions to maintain aspect ratio
+                        $imgSize2 = @getimagesize($photoPath2);
+                        $imgWidth2 = 140;
+                        if ($imgSize2 && $imgSize2[0] > 0) {
+                            $ratio2 = $imgSize2[1] / $imgSize2[0];
+                            $imgHeight2 = $imgWidth2 * $ratio2;
+                        } else {
+                            $imgHeight2 = 105;
+                        }
+                        $cell2->addImage($photoPath2, [
+                            'width' => $imgWidth2,
+                            'height' => $imgHeight2,
+                            'alignment' => 'center',
+                            'wrappingStyle' => 'inline',
+                        ]);
+                    }
+                    $cell2->addText($photo2->caption ?? 'Dokumentasi', ['size' => 9, 'italic' => true, 'color' => '64748b'], ['alignment' => 'center', 'spaceBefore' => 100]);
+                }
+                
+                $section->addTextBreak(1);
+            }
+        }
+
+        $section->addTextBreak(1);
+
+        // Footer
+        $downloadedAt = now()->timezone('Asia/Jakarta')->format('d M Y H:i') . ' WIB';
+        $section->addText(
+            'Dokumen ini diunduh pada ' . $downloadedAt,
+            ['size' => 9, 'color' => '94a3b8', 'italic' => true],
+            ['alignment' => 'center']
+        );
+
+        // Save file
+        $filename = "REPORT-{$report->id}.docx";
+        $temp = storage_path("app/{$filename}");
+        
+        $objWriter = \PhpOffice\PhpWord\IOFactory::createWriter($phpWord, 'Word2007');
+        $objWriter->save($temp);
+
+        return response()->download($temp, $filename)->deleteFileAfterSend(true);
     }
 }

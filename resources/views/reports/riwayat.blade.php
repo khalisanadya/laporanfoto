@@ -10,7 +10,7 @@
     gap: 12px;
     align-items: center;
     flex-wrap: wrap;
-    margin-bottom: 20px;
+    margin-bottom: 28px;
   }
 
   .search-box{
@@ -143,6 +143,16 @@
     border-color: var(--danger);
   }
 
+  .btn-icon.word{
+    color: #2563eb;
+    border-color: #bfdbfe;
+  }
+
+  .btn-icon.word:hover{
+    background: #eff6ff;
+    border-color: #2563eb;
+  }
+
   .empty-state{
     text-align: center;
     padding: 60px 20px;
@@ -249,11 +259,10 @@
     <form class="search-box" method="GET" action="{{ route('reports.riwayat') }}">
       <input type="text" name="search" placeholder="Cari laporan..." value="{{ request('search') }}">
     </form>
-    <a href="{{ route('reports.create') }}" class="btn btn-primary">+ Buat Laporan Baru</a>
   </div>
 
   @if($reports->count() > 0)
-    <div class="table-wrap">
+    <div class="table-wrap" style="margin-top: 16px;">
       <table>
         <thead>
           <tr>
@@ -289,6 +298,9 @@
                   </a>
                   <a href="{{ route('reports.pdf', $report) }}" class="btn-icon pdf" title="Download PDF">
                     ↓
+                  </a>
+                  <a href="{{ route('reports.word', $report) }}" class="btn-icon word" title="Download Word">
+                    W
                   </a>
                 </div>
               </td>

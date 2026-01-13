@@ -194,6 +194,53 @@
   .empty-state p{
     margin-bottom: 20px;
   }
+
+  .action-buttons{
+    display: flex;
+    gap: 8px;
+  }
+
+  .btn-icon{
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    cursor: pointer;
+    transition: all .2s ease;
+    text-decoration: none;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .btn-icon:hover{
+    background: var(--primary-bg);
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .btn-icon.pdf{
+    color: #dc2626;
+    border-color: #fecaca;
+  }
+
+  .btn-icon.pdf:hover{
+    background: #fef2f2;
+    border-color: #dc2626;
+  }
+
+  .btn-icon.word{
+    color: #2563eb;
+    border-color: #bfdbfe;
+  }
+
+  .btn-icon.word:hover{
+    background: #eff6ff;
+    border-color: #2563eb;
+  }
 @endsection
 
 @section('content')
@@ -266,7 +313,17 @@
               <td>{{ $report->lokasi_kegiatan ?? '-' }}</td>
               <td>{{ $report->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i') }}</td>
               <td>
-                <a href="{{ route('reports.pdf', $report) }}" class="btn btn-primary btn-sm">Download PDF</a>
+                <div class="action-buttons">
+                  <a href="{{ route('reports.show', $report) }}" class="btn-icon" title="Preview">
+                    ◎
+                  </a>
+                  <a href="{{ route('reports.pdf', $report) }}" class="btn-icon pdf" title="Download PDF">
+                    ↓
+                  </a>
+                  <a href="{{ route('reports.word', $report) }}" class="btn-icon word" title="Download Word">
+                    W
+                  </a>
+                </div>
               </td>
             </tr>
           @endforeach

@@ -279,9 +279,14 @@
               <td class="photo-cell" style="width:50%;">
                 <div class="photo-wrap">
                   <div class="photo-wrap-inner">
+                    @php
+                      $imgSrc = isset($forPdf) && $forPdf 
+                        ? public_path('storage/'.$photo->photo_path) 
+                        : asset('storage/'.$photo->photo_path);
+                    @endphp
                     <img
                       class="photo-img"
-                      src="{{ public_path('storage/'.$photo->photo_path) }}"
+                      src="{{ $imgSrc }}"
                       alt="foto"
                     >
                   </div>

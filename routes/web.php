@@ -12,5 +12,6 @@ Route::get('/reports/riwayat', [ReportController::class, 'riwayat'])->name('repo
 Route::post('/reports', [ReportController::class, 'store'])->name('reports.store');
 Route::get('/reports/{report}', [ReportController::class, 'show'])->name('reports.show');
 Route::get('/reports/{report}/pdf', [ReportController::class, 'pdf'])->name('reports.pdf');
+Route::get('/reports/{report}/word', [ReportController::class, 'word'])->name('reports.word');
 
 
