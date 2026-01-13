@@ -10,6 +10,48 @@ use Illuminate\Http\Request;
 
 class ReportController extends Controller
 {
+    public function dashboard(Request $request)
+    {
+        $deviceId = $request->input('device_id');
+        
+        $totalReports = Report::where('device_id', $deviceId)->count();
+        
+        $kondisiBaik = ReportItem::whereHas('report', function($q) use ($deviceId) {
+            $q->where('device_id', $deviceId);
+        })->where('kondisi', 'baik')->count();
+        
+        $kondisiProblem = ReportItem::whereHas('report', function($q) use ($deviceId) {
+            $q->where('device_id', $deviceId);
+        })->where('kondisi', 'problem')->count();
+        
+        $bulanIni = Report::where('device_id', $deviceId)
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+            
+        $recentReports = Report::where('device_id', $deviceId)->latest()->take(5)->get();
+        
+        return view('dashboard', compact('totalReports', 'kondisiBaik', 'kondisiProblem', 'bulanIni', 'recentReports'));
+    }
+
+    public function riwayat(Request $request)
+    {
+        $deviceId = $request->input('device_id');
+        $query = Report::where('device_id', $deviceId)->latest();
+        
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('nama_kegiatan', 'like', '%' . $request->search . '%')
+                  ->orWhere('jenis_kegiatan', 'like', '%' . $request->search . '%')
+                  ->orWhere('lokasi_kegiatan', 'like', '%' . $request->search . '%');
+            });
+        }
+        
+        $reports = $query->paginate(10)->withQueryString();
+        
+        return view('reports.riwayat', compact('reports'));
+    }
+
     public function create()
 {
     
@@ -54,6 +96,7 @@ class ReportController extends Controller
 
     
         $report = Report::create([
+            'device_id'       => $request->input('device_id'),
             'nama_kegiatan'   => $validated['nama_kegiatan'] ?? null,
             'waktu_kegiatan'  => $validated['waktu_kegiatan'] ?? null,
             'jenis_kegiatan'  => $validated['jenis_kegiatan'] ?? null,

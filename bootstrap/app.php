@@ -11,7 +11,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->web(append: [
+            \App\Http\Middleware\DeviceIdentifier::class,
+        ]);
+        
+        // Exclude device_id cookie from encryption
+        $middleware->encryptCookies(except: ['device_id']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

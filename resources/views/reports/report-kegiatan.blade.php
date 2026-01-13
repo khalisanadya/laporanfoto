@@ -1,12 +1,9 @@
-<!doctype html>
-<html lang="id">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Report Kegiatan</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+@extends('layouts.app')
 
-  <style>
+@section('title', 'Report Kegiatan')
+@section('header', 'Form Report Kegiatan')
+
+@section('styles')
   :root{
     --bg: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 100%);
     --card:#ffffff;
@@ -531,30 +528,9 @@
   input[type="file"]::file-selector-button:hover{
     opacity: 0.9;
   }
-  </style>
-</head>
+@endsection
 
-<body>
-
-<!-- Header Bar -->
-<div class="header-bar">
-  <div class="header-inner">
-    <div class="logo-section">
-      <div class="logo-icon">RS</div>
-      <div>
-        <div class="header-title">Report System</div>
-        <div class="header-subtitle">Sistem Pelaporan Kegiatan</div>
-      </div>
-    </div>
-    <div class="header-badge">{{ now()->timezone('Asia/Jakarta')->format('d M Y') }}</div>
-  </div>
-</div>
-
-<div class="main-content">
-  <div class="page-intro">
-    <h1>Form Report Kegiatan</h1>
-  </div>
-
+@section('content')
   @if ($errors->any())
     <div class="err">
       <div class="err-icon">!</div>
@@ -572,8 +548,8 @@
     {{-- INFO --}}
     <div class="card">
       <div class="card-header">
-        <div class="card-icon">i</div>
-        <div>
+        <div class="card-header-left">
+          <div class="card-icon">i</div>
           <div class="section-title">Informasi Kegiatan</div>
         </div>
       </div>
@@ -679,12 +655,9 @@
       </div>
     </div>
   </form>
+@endsection
 
-  <div class="page-footer">
-    &copy; {{ date('Y') }} Report System — Sistem Pelaporan Kegiatan
-  </div>
-</div>
-
+@section('scripts')
 <script>
   const rowsEl = document.getElementById('rows');
   const addBtn = document.getElementById('addRowBtn');
@@ -821,5 +794,4 @@
     renumber();
   });
 </script>
-</body>
-</html>
+@endsection

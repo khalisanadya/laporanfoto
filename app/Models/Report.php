@@ -11,6 +11,7 @@ class Report extends Model
 
     
     protected $fillable = [
+        'device_id',
         'nama_kegiatan',
         'waktu_kegiatan',
         'jenis_kegiatan',
