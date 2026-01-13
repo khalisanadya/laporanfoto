@@ -18,9 +18,17 @@ class DeviceIdentifier
         $myReportsCookie = $request->cookie('my_reports');
         $myReportIds = $myReportsCookie ? explode(',', $myReportsCookie) : [];
         
+        // Get BAP IDs from cookie
+        $myBapsCookie = $request->cookie('my_baps');
+        $myBapIds = $myBapsCookie ? explode(',', $myBapsCookie) : [];
+        
         // Share to views and request
         view()->share('myReportIds', $myReportIds);
-        $request->merge(['my_report_ids' => $myReportIds]);
+        view()->share('myBapIds', $myBapIds);
+        $request->merge([
+            'my_report_ids' => $myReportIds,
+            'my_bap_ids' => $myBapIds,
+        ]);
 
         return $next($request);
     }

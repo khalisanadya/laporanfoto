@@ -15,8 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\DeviceIdentifier::class,
         ]);
         
-        // Exclude my_reports cookie from encryption
-        $middleware->encryptCookies(except: ['my_reports']);
+        // Exclude cookies from encryption
+        $middleware->encryptCookies(except: ['my_reports', 'my_baps']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

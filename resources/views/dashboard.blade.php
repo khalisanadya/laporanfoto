@@ -179,6 +179,12 @@
     border: 1px solid var(--danger-border);
   }
 
+  .badge-info{
+    background: #f0f9ff;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+  }
+
   .empty-state{
     text-align: center;
     padding: 48px 20px;
@@ -272,57 +278,57 @@
   </div>
 </div>
 
-<!-- Quick Actions -->
-<div class="quick-actions">
-  <a href="{{ route('reports.create') }}" class="action-btn">
-    <span class="icon">+</span>
-    <span>Buat Report Kegiatan Baru</span>
-  </a>
-  <a href="{{ route('reports.riwayat') }}" class="action-btn">
-    <span class="icon">≡</span>
-    <span>Lihat Semua Riwayat</span>
-  </a>
-</div>
-
 <!-- Recent Reports -->
 <div class="card">
   <div class="card-header">
     <h3 class="card-title">Laporan Terbaru</h3>
-    <a href="{{ route('reports.riwayat') }}" class="btn btn-secondary btn-sm">Lihat Semua</a>
   </div>
 
-  @if($recentReports->count() > 0)
+  @if($recentItems->count() > 0)
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
             <th>No</th>
-            <th>Nama Kegiatan</th>
-            <th>Jenis</th>
-            <th>Lokasi</th>
+            <th>Nama/Nomor</th>
+            <th>Jenis Laporan</th>
             <th>Tanggal</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody>
-          @foreach($recentReports as $index => $report)
+          @foreach($recentItems as $index => $item)
             <tr>
               <td>{{ $index + 1 }}</td>
-              <td><strong>{{ $report->nama_kegiatan ?? '-' }}</strong></td>
-              <td>{{ $report->jenis_kegiatan ?? '-' }}</td>
-              <td>{{ $report->lokasi_kegiatan ?? '-' }}</td>
-              <td>{{ $report->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i') }}</td>
+              <td><strong>{{ $item->nama }}</strong></td>
+              <td>
+                @if($item->type === 'report')
+                  <span class="badge badge-success">Report Kegiatan</span>
+                @else
+                  <span class="badge badge-info">BAP</span>
+                @endif
+              </td>
+              <td>{{ $item->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i') }}</td>
               <td>
                 <div class="action-buttons">
-                  <a href="{{ route('reports.show', $report) }}" class="btn-icon" title="Preview">
-                    ◎
-                  </a>
-                  <a href="{{ route('reports.pdf', $report) }}" class="btn-icon pdf" title="Download PDF">
-                    ↓
-                  </a>
-                  <a href="{{ route('reports.word', $report) }}" class="btn-icon word" title="Download Word">
-                    W
-                  </a>
+                  @if($item->type === 'report')
+                    <a href="{{ route('reports.show', $item->id) }}" class="btn-icon" title="Preview">
+                      ◎
+                    </a>
+                    <a href="{{ route('reports.pdf', $item->id) }}" class="btn-icon pdf" title="Download PDF">
+                      ↓
+                    </a>
+                    <a href="{{ route('reports.word', $item->id) }}" class="btn-icon word" title="Download Word">
+                      W
+                    </a>
+                  @else
+                    <a href="{{ route('bap.show', $item->id) }}" class="btn-icon" title="Preview">
+                      ◎
+                    </a>
+                    <a href="{{ route('bap.word', $item->id) }}" class="btn-icon word" title="Download Word">
+                      W
+                    </a>
+                  @endif
                 </div>
               </td>
             </tr>
@@ -334,7 +340,6 @@
     <div class="empty-state">
       <div class="empty-state-icon">≡</div>
       <p>Belum ada laporan yang dibuat</p>
-      <a href="{{ route('reports.create') }}" class="btn btn-primary">Buat Laporan Pertama</a>
     </div>
   @endif
 </div>

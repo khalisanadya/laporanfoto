@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Report;
+use App\Models\Bap;
 use App\Models\ReportItem;
 use App\Models\ReportPhoto;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -13,13 +14,14 @@ class ReportController extends Controller
     public function dashboard(Request $request)
     {
         $myReportIds = $request->input('my_report_ids', []);
+        $myBapIds = $request->cookie('my_baps');
+        $myBapIds = $myBapIds ? explode(',', $myBapIds) : [];
         
         if (empty($myReportIds)) {
             $totalReports = 0;
             $kondisiBaik = 0;
             $kondisiProblem = 0;
             $bulanIni = 0;
-            $recentReports = collect();
         } else {
             $totalReports = Report::whereIn('id', $myReportIds)->count();
             
@@ -33,11 +35,51 @@ class ReportController extends Controller
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->count();
-                
-            $recentReports = Report::whereIn('id', $myReportIds)->latest()->take(5)->get();
         }
         
-        return view('dashboard', compact('totalReports', 'kondisiBaik', 'kondisiProblem', 'bulanIni', 'recentReports'));
+        // Combine Reports and BAPs for recent items
+        $recentItems = collect();
+        
+        if (!empty($myReportIds)) {
+            $reports = Report::whereIn('id', $myReportIds)
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(function($report) {
+                    return (object)[
+                        'id' => $report->id,
+                        'type' => 'report',
+                        'nama' => $report->nama_kegiatan ?? '-',
+                        'jenis_laporan' => 'Report Kegiatan',
+                        'detail' => $report->lokasi_kegiatan ?? '-',
+                        'created_at' => $report->created_at,
+                    ];
+                });
+            $recentItems = $recentItems->merge($reports);
+        }
+        
+        if (!empty($myBapIds)) {
+            $baps = Bap::whereIn('id', $myBapIds)
+                ->latest()
+                ->take(5)
+                ->get()
+                ->map(function($bap) {
+                    return (object)[
+                        'id' => $bap->id,
+                        'type' => 'bap',
+                        'nama' => $bap->nomor_bap,
+                        'jenis_laporan' => 'BAP',
+                        'detail' => $bap->tanggal_bap->format('d M Y'),
+                        'created_at' => $bap->created_at,
+                    ];
+                });
+            $recentItems = $recentItems->merge($baps);
+        }
+        
+        // Sort by created_at and take 5
+        $recentItems = $recentItems->sortByDesc('created_at')->take(5)->values();
+        
+        return view('dashboard', compact('totalReports', 'kondisiBaik', 'kondisiProblem', 'bulanIni', 'recentItems'));
     }
 
     public function riwayat(Request $request)

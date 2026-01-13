@@ -452,6 +452,11 @@
     box-shadow: 0 4px 14px rgba(3,105,161,.15);
   }
 
+  .btn-primary{
+    background: var(--btn-gradient);
+    color: #fff;
+  }
+
   .btn-add{
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     box-shadow: 0 4px 14px rgba(16,185,129,.3);
@@ -651,7 +656,8 @@
       </div>
 
       <div class="btn-row">
-        <button class="btn" type="submit">Submit Report</button>
+        <button class="btn btn-primary" type="submit">Submit Report</button>
+        <a href="{{ route('dashboard') }}" class="btn btn-secondary">Batal</a>
       </div>
     </div>
   </form>

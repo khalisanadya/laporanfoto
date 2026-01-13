@@ -99,6 +99,101 @@
     margin-top: 2px;
   }
 
+  .nav-group{
+    margin-bottom: 4px;
+  }
+
+  .nav-group-header{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    color: rgba(255,255,255,.8);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+
+  .nav-group-header:hover{
+    background: rgba(255,255,255,.1);
+    color: #fff;
+  }
+
+  .nav-group.open .nav-group-header{
+    background: rgba(255,255,255,.1);
+    color: #fff;
+  }
+
+  .nav-group-left{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .nav-group-icon{
+    width: 28px;
+    height: 28px;
+    background: rgba(255,255,255,.15);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+
+  .nav-group-arrow{
+    font-size: 12px;
+    transition: transform .2s ease;
+  }
+
+  .nav-group.open .nav-group-arrow{
+    transform: rotate(90deg);
+  }
+
+  .nav-group-items{
+    display: none;
+    padding-left: 20px;
+  }
+
+  .nav-group.open .nav-group-items{
+    display: block;
+  }
+
+  .nav-subitem{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: rgba(255,255,255,.7);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all .2s ease;
+    margin-bottom: 2px;
+  }
+
+  .nav-subitem:hover{
+    background: rgba(255,255,255,.08);
+    color: #fff;
+  }
+
+  .nav-subitem.active{
+    background: rgba(255,255,255,.15);
+    color: #fff;
+  }
+
+  .nav-subicon{
+    width: 6px;
+    height: 6px;
+    background: currentColor;
+    border-radius: 50%;
+    opacity: 0.6;
+  }
+
   .sidebar-nav{
     flex: 1;
     padding: 20px 12px;
@@ -327,17 +422,47 @@
       Dashboard
     </a>
 
-    <div class="nav-label">Laporan</div>
+    <div class="nav-label">Report Bulanan</div>
     
-    <a href="{{ route('reports.create') }}" class="nav-item {{ request()->routeIs('reports.create') ? 'active' : '' }}">
-      <span class="nav-icon">+</span>
-      Buat Report Kegiatan
-    </a>
-    
-    <a href="{{ route('reports.riwayat') }}" class="nav-item {{ request()->routeIs('reports.riwayat') ? 'active' : '' }}">
-      <span class="nav-icon">≡</span>
-      Riwayat Laporan
-    </a>
+    <div class="nav-group {{ request()->routeIs('reports.*') ? 'open' : '' }}">
+      <div class="nav-group-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="nav-group-left">
+          <span class="nav-group-icon">≡</span>
+          Report Kegiatan
+        </div>
+        <span class="nav-group-arrow">▸</span>
+      </div>
+      <div class="nav-group-items">
+        <a href="{{ route('reports.create') }}" class="nav-subitem {{ request()->routeIs('reports.create') ? 'active' : '' }}">
+          <span class="nav-subicon"></span>
+          Buat Baru
+        </a>
+        <a href="{{ route('reports.riwayat') }}" class="nav-subitem {{ request()->routeIs('reports.riwayat') ? 'active' : '' }}">
+          <span class="nav-subicon"></span>
+          Riwayat
+        </a>
+      </div>
+    </div>
+
+    <div class="nav-group {{ request()->routeIs('bap.*') ? 'open' : '' }}">
+      <div class="nav-group-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="nav-group-left">
+          <span class="nav-group-icon">▤</span>
+          BAP
+        </div>
+        <span class="nav-group-arrow">▸</span>
+      </div>
+      <div class="nav-group-items">
+        <a href="{{ route('bap.create') }}" class="nav-subitem {{ request()->routeIs('bap.create') ? 'active' : '' }}">
+          <span class="nav-subicon"></span>
+          Buat Baru
+        </a>
+        <a href="{{ route('bap.index') }}" class="nav-subitem {{ request()->routeIs('bap.index') ? 'active' : '' }}">
+          <span class="nav-subicon"></span>
+          Riwayat
+        </a>
+      </div>
+    </div>
   </nav>
 
   <div class="sidebar-footer">
