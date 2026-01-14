@@ -8,16 +8,18 @@ use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\SimpleType\Jc;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class BapController extends Controller
 {
     public function index()
     {
+        // Kode ini untuk menampilkan daftar BAP
         $myBapIds = request()->get('my_bap_ids', []);
         $baps = Bap::whereIn('id', $myBapIds)
             ->orderBy('created_at', 'desc')
             ->paginate(10);
-        
+            
         return view('bap.index', compact('baps'));
     }
 
@@ -37,7 +39,7 @@ class BapController extends Controller
 
         $bap = Bap::create($validated);
 
-        // Add to cookie for device tracking
+        // Tracking via cookie
         $myReports = $request->cookie('my_baps', '');
         $reportIds = $myReports ? explode(',', $myReports) : [];
         $reportIds[] = $bap->id;
@@ -55,222 +57,113 @@ class BapController extends Controller
 
     public function word(Bap $bap)
     {
-        $phpWord = new PhpWord();
-        
-        // Set default font
-        $phpWord->setDefaultFontName('Arial');
-        $phpWord->setDefaultFontSize(11);
+        try {
+            // Bersihkan buffer agar tidak korup
+            if (ob_get_level()) { ob_end_clean(); }
 
-        $section = $phpWord->addSection([
-            'marginTop' => 800,
-            'marginBottom' => 800,
-            'marginLeft' => 1200,
-            'marginRight' => 1200,
-        ]);
+            $phpWord = new PhpWord();
+            $phpWord->setDefaultFontName('Arial');
+            $phpWord->setDefaultFontSize(11);
 
-        // Logo - temporarily disabled for testing
-        // $logoPath = public_path('images/logo-gasnet.png');
-        // if (file_exists($logoPath)) {
-        //     $section->addImage($logoPath, [
-        //         'width' => 80,
-        //         'height' => 40,
-        //         'alignment' => Jc::START,
-        //     ]);
-        // }
+            $section = $phpWord->addSection([
+                'marginTop' => 800, 'marginBottom' => 800, 'marginLeft' => 1200, 'marginRight' => 1200,
+            ]);
 
-        $section->addTextBreak(1);
+            // Header Logo
+            $logoPath = public_path('images/logo-gasnet.png'); 
+            if (file_exists($logoPath)) {
+                $section->addImage($logoPath, ['width' => 100, 'height' => 35, 'alignment' => Jc::LEFT]);
+            }
 
-        // Title
-        $section->addText(
-            'BERITA ACARA PEMERIKSAAN',
-            ['bold' => true, 'size' => 12],
-            ['alignment' => Jc::CENTER, 'spaceAfter' => 0]
-        );
-        $section->addText(
-            'JASA INSTALASI DAN MANAGED SERVICE ACCESS POINT (AP)',
-            ['bold' => true, 'size' => 12],
-            ['alignment' => Jc::CENTER, 'spaceAfter' => 0]
-        );
-        $section->addText(
-            'PGNMAS SITE GS8 (JAKARTA) DAN KEBONWARU (BANDUNG)',
-            ['bold' => true, 'size' => 12],
-            ['alignment' => Jc::CENTER, 'spaceAfter' => 200]
-        );
+            // Garis Biru
+            $section->addLine(['width' => 450, 'height' => 0, 'weight' => 2, 'color' => '4A86E8']);
+            $section->addTextBreak(1);
 
-        // Nomor BAP
-        $section->addText(
-            'Nomor : ' . $bap->nomor_bap,
-            ['bold' => true, 'size' => 11],
-            ['alignment' => Jc::CENTER, 'spaceAfter' => 300]
-        );
+            // Judul
+            $section->addText('BERITA ACARA PEMERIKSAAN', ['bold' => true, 'size' => 14], ['alignment' => Jc::CENTER]);
+            $section->addText('JASA INSTALASI DAN MANAGED SERVICE ACCESS POINT (AP)', ['bold' => true, 'size' => 11], ['alignment' => Jc::CENTER]);
+            $section->addText('PGNMAS SITE GS8 (JAKARTA) DAN KEBONWARU (BANDUNG)', ['bold' => true, 'size' => 11], ['alignment' => Jc::CENTER]);
+            
+            $section->addTextBreak(1);
+            $section->addText('Nomor : ' . $bap->nomor_bap, ['bold' => true, 'color' => '2E5496'], ['alignment' => Jc::CENTER]);
+            $section->addTextBreak(1);
 
-        // Format tanggal Indonesia
-        $tanggalBap = Carbon::parse($bap->tanggal_bap);
-        $hariIndo = $this->getHariIndonesia($tanggalBap->dayOfWeek);
-        $bulanIndo = $this->getBulanIndonesia($tanggalBap->month);
-        $tanggalTerbilang = $this->terbilang($tanggalBap->day);
-        $tahunTerbilang = $this->terbilangTahun($tanggalBap->year);
+            // Isi Berita Acara
+            $tanggalBap = Carbon::parse($bap->tanggal_bap);
+            $hari = $this->getHariIndonesia($tanggalBap->dayOfWeek);
+            $bulan = $this->getBulanIndonesia($tanggalBap->month);
 
-        // Paragraph 1
-        $textRun = $section->addTextRun(['alignment' => Jc::BOTH, 'spaceAfter' => 200]);
-        $textRun->addText('Pada hari ini, ');
-        $textRun->addText($hariIndo, ['bold' => true]);
-        $textRun->addText(' tanggal ');
-        $textRun->addText(ucfirst($tanggalTerbilang), ['bold' => true]);
-        $textRun->addText(' bulan ');
-        $textRun->addText($bulanIndo, ['bold' => true]);
-        $textRun->addText(' tahun ');
-        $textRun->addText($tahunTerbilang, ['bold' => true]);
-        $textRun->addText(' (');
-        $textRun->addText($tanggalBap->format('d-m-Y'), ['bold' => true]);
-        $textRun->addText('), telah dilaksanakan pemeriksaan terhadap pekerjaan ');
-        $textRun->addText('Jasa Instalasi dan Managed Service Access Point (AP) PGNMAS site GS8 (Jakarta) dan Kebonwaru (Bandung)', ['bold' => true]);
-        $textRun->addText(' oleh:');
+            $textRun = $section->addTextRun(['alignment' => Jc::BOTH, 'lineSpacing' => 1.5]);
+            $textRun->addText('Pada hari ini, ');
+            $textRun->addText($hari, ['bold' => true]);
+            $textRun->addText(' tanggal ');
+            $textRun->addText($tanggalBap->day, ['bold' => true]);
+            $textRun->addText(' bulan ');
+            $textRun->addText($bulan, ['bold' => true]);
+            $textRun->addText(' tahun ');
+            $textRun->addText($tanggalBap->year, ['bold' => true]);
+            $textRun->addText(' (' . $tanggalBap->format('d-m-Y') . '), telah dilaksanakan pemeriksaan terhadap pekerjaan ');
+            $textRun->addText('Jasa Instalasi dan Managed Service Access Point (AP) PGNMAS site GS8 (Jakarta) dan Kebonwaru (Bandung)', ['bold' => true]);
+            $textRun->addText(' oleh:');
 
-        $section->addTextBreak(1);
+            $section->addTextBreak(1);
 
-        // Pihak Pertama
-        $table = $section->addTable();
-        $table->addRow();
-        $table->addCell(2000)->addText('Nama', ['size' => 11]);
-        $table->addCell(7000)->addText(': Angga Galih Perdana', ['size' => 11]);
-        
-        $table->addRow();
-        $table->addCell(2000)->addText('Jabatan', ['size' => 11]);
-        $table->addCell(7000)->addText(': Department Head Network Operation & Reliability', ['size' => 11]);
-        
-        $table->addRow();
-        $table->addCell(2000)->addText('Perusahaan', ['size' => 11]);
-        $table->addCell(7000)->addText(': PT Telemedia Dinamika Sarana', ['size' => 11]);
+            // Tabel Pihak Pertama
+            $tableStyle = ['cellMargin' => 50];
+            $table = $section->addTable($tableStyle);
+            $table->addRow();
+            $table->addCell(2000)->addText('Nama'); $table->addCell(7000)->addText(': Angga Galih Perdana');
+            $table->addRow();
+            $table->addCell(2000)->addText('Jabatan'); $table->addCell(7000)->addText(': Dept Head Network Operation');
+            $table->addRow();
+            $table->addCell(2000)->addText('Perusahaan'); $table->addCell(7000)->addText(': PT Telemedia Dinamika Sarana');
 
-        $section->addTextBreak(1);
-        $section->addText('Selanjutnya disebut sebagai "Pihak Pertama", dan', ['size' => 11]);
-        $section->addTextBreak(1);
+            $section->addTextBreak(1);
+            $section->addText('Selanjutnya disebut sebagai "Pihak Pertama", dan');
+            $section->addTextBreak(1);
 
-        // Pihak Kedua
-        $table2 = $section->addTable();
-        $table2->addRow();
-        $table2->addCell(2000)->addText('Nama', ['size' => 11]);
-        $table2->addCell(7000)->addText(': Nini Jaya', ['size' => 11]);
-        
-        $table2->addRow();
-        $table2->addCell(2000)->addText('Jabatan', ['size' => 11]);
-        $table2->addCell(7000)->addText(': Direktur', ['size' => 11]);
-        
-        $table2->addRow();
-        $table2->addCell(2000)->addText('Perusahaan', ['size' => 11]);
-        $table2->addCell(7000)->addText(': PT Telemedia Mitra Elektrotama', ['size' => 11]);
+            // Tabel Pihak Kedua
+            $table2 = $section->addTable($tableStyle);
+            $table2->addRow();
+            $table2->addCell(2000)->addText('Nama'); $table2->addCell(7000)->addText(': Nini Jaya');
+            $table2->addRow();
+            $table2->addCell(2000)->addText('Jabatan'); $table2->addCell(7000)->addText(': Direktur');
+            $table2->addRow();
+            $table2->addCell(2000)->addText('Perusahaan'); $table2->addCell(7000)->addText(': PT Telemedia Mitra Elektrotama');
 
-        $section->addTextBreak(1);
-        $section->addText('Selanjutnya disebut sebagai "Pihak Kedua".', ['size' => 11]);
-        $section->addTextBreak(1);
+            $section->addTextBreak(1);
+            $section->addText('Selanjutnya disebut sebagai "Pihak Kedua".');
 
-        // Berita Acara berdasarkan
-        $section->addText('Berita Acara ini dibuat berdasarkan:', ['size' => 11]);
+            // Tanda Tangan
+            $section->addTextBreak(2);
+            $signTable = $section->addTable(['alignment' => Jc::CENTER]);
+            $signTable->addRow();
+            $signTable->addCell(4500)->addText('PT Telemedia Mitra Elektrotama', [], ['alignment' => Jc::CENTER]);
+            $signTable->addCell(4500)->addText('PT Telemedia Dinamika Sarana', [], ['alignment' => Jc::CENTER]);
+            $signTable->addRow();
+            $signTable->addCell(4500)->addText('Direktur', [], ['alignment' => Jc::CENTER]);
+            $signTable->addCell(4500)->addText('Dept Head Network Operation', [], ['alignment' => Jc::CENTER]);
+            $signTable->addRow(1200); 
+            $signTable->addCell(4500); $signTable->addCell(4500);
+            $signTable->addRow();
+            $signTable->addCell(4500)->addText('Nini Jaya', ['bold' => true], ['alignment' => Jc::CENTER]);
+            $signTable->addCell(4500)->addText('Angga Galih Perdana', ['bold' => true], ['alignment' => Jc::CENTER]);
 
-        // List items
-        $listRun1 = $section->addTextRun(['alignment' => Jc::BOTH, 'spaceAfter' => 100]);
-        $listRun1->addText('1.  ', ['size' => 11]);
-        $listRun1->addText('Surat Perintah Kerja', ['bold' => true, 'italic' => true, 'size' => 11]);
-        $listRun1->addText(' yang dikeluarkan PT Telemedia Dinamika Sarana Nomor : ', ['size' => 11]);
-        $listRun1->addText('152600.SPK/LG.01.03/UT/2025', ['bold' => true, 'size' => 11]);
-        $listRun1->addText(' tanggal ', ['size' => 11]);
-        $listRun1->addText('01 Oktober 2025', ['bold' => true, 'size' => 11]);
-        $listRun1->addText(' untuk ', ['size' => 11]);
-        $listRun1->addText('Jasa Instalasi dan Managed Service Access Point (AP) PGNMAS site GS8 (Jakarta) dan Kebonwaru (Bandung)', ['bold' => true, 'size' => 11]);
-        $listRun1->addText(' ("Kontrak");', ['size' => 11]);
+            // Proses Pengiriman File
+            $fileName = "BAP-" . preg_replace('/[^a-zA-Z0-9]/', '-', $bap->nomor_bap) . ".docx";
+            
+            header('Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+            header('Content-Disposition: attachment; filename="'.$fileName.'"');
+            header('Cache-Control: max-age=0');
 
-        $tanggalSuratPermohonan = Carbon::parse($bap->tanggal_surat_permohonan);
-        $listRun2 = $section->addTextRun(['alignment' => Jc::BOTH, 'spaceAfter' => 100]);
-        $listRun2->addText('2.  ', ['size' => 11]);
-        $listRun2->addText('Surat dari PT.Telemedia Mitra Elektrotama Nomor: ', ['size' => 11]);
-        $listRun2->addText($bap->nomor_surat_permohonan, ['bold' => true, 'size' => 11]);
-        $listRun2->addText(' tanggal ', ['size' => 11]);
-        $listRun2->addText($tanggalSuratPermohonan->format('d') . ' ' . $this->getBulanIndonesia($tanggalSuratPermohonan->month) . ' ' . $tanggalSuratPermohonan->year, ['bold' => true, 'size' => 11]);
-        $listRun2->addText(' perihal Surat Permohonan Pemeriksaan Pekerjaan;', ['size' => 11]);
+            $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
+            $objWriter->save('php://output');
+            exit;
 
-        $listRun3 = $section->addTextRun(['alignment' => Jc::BOTH, 'spaceAfter' => 100]);
-        $listRun3->addText('3.  ', ['size' => 11]);
-        $listRun3->addText('Laporan Pekerjaan', ['bold' => true, 'italic' => true, 'size' => 11]);
-        $listRun3->addText(' Jasa Instalasi dan Managed Service Access Point (AP) PGNMAS site GS8 (Jakarta) dan Kebonwaru (Bandung) Periode Desember 2025 dari pihak Kedua;', ['size' => 11]);
-
-        // Paraf section
-        $section->addTextBreak(2);
-        $parafTable = $section->addTable(['alignment' => Jc::CENTER]);
-        $parafTable->addRow();
-        $parafTable->addCell(4500)->addText('Paraf PT TME :', ['size' => 10]);
-        $parafTable->addCell(4500)->addText('Paraf PT GASNET :', ['size' => 10], ['alignment' => Jc::END]);
-
-        // New page for second part
-        $section->addPageBreak();
-
-        // Logo again - temporarily disabled
-        // if (file_exists($logoPath)) {
-        //     $section->addImage($logoPath, [
-        //         'width' => 80,
-        //         'height' => 40,
-        //         'alignment' => Jc::START,
-        //     ]);
-        // }
-
-        $section->addTextBreak(2);
-
-        // Hasil pemeriksaan
-        $textRun2 = $section->addTextRun(['alignment' => Jc::BOTH, 'spaceAfter' => 200]);
-        $textRun2->addText('Dan berdasarkan hasil pemeriksaan maka Pihak Pertama dan Pihak Kedua menyimpulkan/menyetujui hal-hal sebagai berikut:', ['size' => 11]);
-
-        $section->addTextBreak(1);
-
-        $listRun4 = $section->addTextRun(['alignment' => Jc::BOTH, 'spaceAfter' => 100]);
-        $listRun4->addText('1.  ', ['size' => 11]);
-        $listRun4->addText('Penyedia Jasa telah menyelesaikan pekerjaan ', ['size' => 11]);
-        $listRun4->addText('Jasa Instalasi dan Managed Service Access Point (AP) PGNMAS site GS8 (Jakarta) dan Kebonwaru (Bandung)', ['bold' => true, 'size' => 11]);
-        $listRun4->addText(' periode Desember 2025 sesuai dengan syarat-syarat yang ditentukan dalam Surat Perintah Kerja.', ['size' => 11]);
-
-        $listRun5 = $section->addTextRun(['alignment' => Jc::BOTH, 'spaceAfter' => 100]);
-        $listRun5->addText('2.  ', ['size' => 11]);
-        $listRun5->addText('Penyedia Jasa berhak menerima pembayaran periode Desember 2025 yaitu sebesar: ', ['size' => 11]);
-        $listRun5->addText('Rp. 8.900.000,- (Delapan Juta Sembilan Ratus Ribu Rupiah)', ['bold' => true, 'size' => 11]);
-        $listRun5->addText(', belum termasuk PPN dan pajak – pajak yang berlaku sesuai ketentuan.', ['size' => 11]);
-
-        $section->addTextBreak(2);
-
-        $section->addText(
-            'Demikian Berita Acara ini dibuat rangkap 2 (dua) dan ditandatangani untuk dapat diketahui serta dipergunakan sebagaimana mestinya.',
-            ['size' => 11],
-            ['alignment' => Jc::BOTH]
-        );
-
-        $section->addTextBreak(3);
-
-        // Signature table
-        $signTable = $section->addTable(['alignment' => Jc::CENTER]);
-        $signTable->addRow();
-        $cell1 = $signTable->addCell(4500, ['valign' => 'top']);
-        $cell1->addText('PT Telemedia Mitra Elektrotama', ['size' => 11], ['alignment' => Jc::CENTER]);
-        $cell1->addText('Direktur', ['size' => 11], ['alignment' => Jc::CENTER]);
-        
-        $cell2 = $signTable->addCell(4500, ['valign' => 'top']);
-        $cell2->addText('PT Telemedia Dinamika Sarana', ['size' => 11], ['alignment' => Jc::CENTER]);
-        $cell2->addText('Department Head Network Operation & Reliability', ['size' => 11], ['alignment' => Jc::CENTER]);
-
-        $signTable->addRow(1500);
-        $signTable->addCell(4500)->addText('');
-        $signTable->addCell(4500)->addText('');
-
-        $signTable->addRow();
-        $signTable->addCell(4500)->addText('Nini Jaya', ['bold' => true, 'size' => 11], ['alignment' => Jc::CENTER]);
-        $signTable->addCell(4500)->addText('Angga Galih Perdana', ['bold' => true, 'size' => 11], ['alignment' => Jc::CENTER]);
-
-        // Save file
-        $filename = "BAP-{$bap->id}.docx";
-        $temp = storage_path("app/{$filename}");
-        
-        $objWriter = IOFactory::createWriter($phpWord, 'Word2007');
-        $objWriter->save($temp);
-
-        $downloadName = "BAP-" . preg_replace('/[^a-zA-Z0-9\-\.]/', '-', $bap->nomor_bap) . ".docx";
-        return response()->download($temp, $downloadName)->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            Log::error("Gagal generate Word: " . $e->getMessage());
+            return "Terjadi kesalahan sistem: " . $e->getMessage();
+        }
     }
 
     private function getHariIndonesia($dayOfWeek)
@@ -281,48 +174,7 @@ class BapController extends Controller
 
     private function getBulanIndonesia($month)
     {
-        $bulan = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
-        ];
+        $bulan = [1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April', 5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus', 9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'];
         return $bulan[$month];
-    }
-
-    private function terbilang($n)
-    {
-        $angka = ['', 'satu', 'dua', 'tiga', 'empat', 'lima', 'enam', 'tujuh', 'delapan', 'sembilan', 'sepuluh', 'sebelas'];
-        
-        if ($n < 12) {
-            return $angka[$n];
-        } elseif ($n < 20) {
-            return $angka[$n - 10] . ' belas';
-        } elseif ($n < 100) {
-            return $angka[floor($n / 10)] . ' puluh ' . $angka[$n % 10];
-        }
-        return $n;
-    }
-
-    private function terbilangTahun($tahun)
-    {
-        // 2026 = Dua Ribu Dua Puluh Enam
-        $ribuan = floor($tahun / 1000);
-        $sisa = $tahun % 1000;
-        $ratusan = floor($sisa / 100);
-        $puluhan = $sisa % 100;
-
-        $result = '';
-        if ($ribuan == 2) {
-            $result .= 'Dua Ribu ';
-        }
-        if ($ratusan > 0) {
-            $angka = ['', 'Seratus', 'Dua Ratus', 'Tiga Ratus', 'Empat Ratus', 'Lima Ratus', 'Enam Ratus', 'Tujuh Ratus', 'Delapan Ratus', 'Sembilan Ratus'];
-            $result .= $angka[$ratusan] . ' ';
-        }
-        if ($puluhan > 0) {
-            $result .= ucfirst($this->terbilang($puluhan));
-        }
-
-        return trim($result) . ' (' . $tahun . ')';
     }
 }

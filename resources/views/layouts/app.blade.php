@@ -360,6 +360,9 @@
     background: #fff;
     color: var(--primary);
     border: 1.5px solid var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .btn-secondary:hover{

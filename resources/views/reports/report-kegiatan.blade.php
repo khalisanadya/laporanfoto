@@ -656,7 +656,7 @@
       </div>
 
       <div class="btn-row">
-        <button class="btn btn-primary" type="submit">Submit Report</button>
+        <button class="btn btn-primary" type="submit">Simpan & Preview</button>
         <a href="{{ route('dashboard') }}" class="btn btn-secondary">Batal</a>
       </div>
     </div>

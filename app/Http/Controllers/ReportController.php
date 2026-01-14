@@ -200,14 +200,14 @@ class ReportController extends Controller
         $myReportIds[] = $report->id;
         $cookieValue = implode(',', $myReportIds);
         
-        return redirect()->route('reports.pdf', $report)
+        return redirect()->route('reports.show', $report)
             ->cookie('my_reports', $cookieValue, 525600, '/', null, false, false);
     }
 
     public function show(Report $report)
     {
         $report->load(['items', 'photos']);
-        return view('reports.pdf-report-kegiatan', compact('report'));
+        return view('reports.show', compact('report'));
     }
 
     public function pdf(Report $report)
