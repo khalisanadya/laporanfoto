@@ -66,17 +66,25 @@ class BapController extends Controller
             $phpWord->setDefaultFontSize(11);
 
             $section = $phpWord->addSection([
-                'marginTop' => 800, 'marginBottom' => 800, 'marginLeft' => 1200, 'marginRight' => 1200,
+                'marginTop' => 1200, 'marginBottom' => 800, 'marginLeft' => 1200, 'marginRight' => 1200,
             ]);
 
-            // Header Logo
+            // Header dengan Logo (muncul di setiap halaman)
+            $header = $section->addHeader();
             $logoPath = public_path('images/logo-gasnet.png'); 
             if (file_exists($logoPath)) {
-                $section->addImage($logoPath, ['width' => 100, 'height' => 35, 'alignment' => Jc::LEFT]);
+                $header->addImage($logoPath, ['width' => 100, 'height' => 35, 'alignment' => Jc::LEFT]);
             }
 
-            // Garis Biru
-            $section->addLine(['width' => 450, 'height' => 0, 'weight' => 2, 'color' => '4A86E8']);
+            // Footer dengan Paraf (muncul di setiap halaman)
+            $footer = $section->addFooter();
+            $footerTable = $footer->addTable(['alignment' => Jc::CENTER]);
+            $footerTable->addRow();
+            $footerTable->addCell(4500)->addText('Paraf PT TME :', ['size' => 10, 'color' => '808080'], ['alignment' => Jc::LEFT]);
+            $footerTable->addCell(4500)->addText('Paraf PT GASNET :', ['size' => 10, 'color' => '808080'], ['alignment' => Jc::RIGHT]);
+
+            // Garis Biru di bawah header
+            $section->addText('________________________________________________________________________________________________________', ['color' => '4A86E8', 'size' => 8]);
             $section->addTextBreak(1);
 
             // Judul
