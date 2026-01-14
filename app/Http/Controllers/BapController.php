@@ -14,7 +14,7 @@ class BapController extends Controller
 {
     public function index()
     {
-        // Kode ini untuk menampilkan daftar BAP
+       
         $myBapIds = request()->get('my_bap_ids', []);
         $baps = Bap::whereIn('id', $myBapIds)
             ->orderBy('created_at', 'desc')
@@ -39,7 +39,6 @@ class BapController extends Controller
 
         $bap = Bap::create($validated);
 
-        // Tracking via cookie
         $myReports = $request->cookie('my_baps', '');
         $reportIds = $myReports ? explode(',', $myReports) : [];
         $reportIds[] = $bap->id;
@@ -58,7 +57,7 @@ class BapController extends Controller
     public function word(Bap $bap)
     {
         try {
-            // Bersihkan buffer agar tidak korup
+           
             if (ob_get_level()) { ob_end_clean(); }
 
             $phpWord = new PhpWord();
@@ -69,14 +68,14 @@ class BapController extends Controller
                 'marginTop' => 1200, 'marginBottom' => 800, 'marginLeft' => 1200, 'marginRight' => 1200,
             ]);
 
-            // Header dengan Logo (muncul di setiap halaman)
+           
             $header = $section->addHeader();
             $logoPath = public_path('images/logo-gasnet.png'); 
             if (file_exists($logoPath)) {
                 $header->addImage($logoPath, ['width' => 100, 'height' => 35, 'alignment' => Jc::LEFT]);
             }
 
-            // Footer dengan Paraf (muncul di setiap halaman)
+            
             $footer = $section->addFooter();
             $footerTable = $footer->addTable(['alignment' => Jc::CENTER]);
             $footerTable->addRow();
@@ -177,7 +176,7 @@ class BapController extends Controller
             $p3->addText('Laporan Pekerjaan', ['italic' => true, 'bold' => true]);
             $p3->addText(' Jasa Instalasi dan Managed Service Access Point (AP) PGNMAS site GS8 (Jakarta) dan Kebonwaru (Bandung) Periode Desember 2025 dari pihak Kedua;');
 
-            // --- HASIL PEMERIKSAAN ---
+            
             $section->addTextBreak(1);
             $section->addText('Dan berdasarkan hasil pemeriksaan maka Pihak Pertama dan Pihak Kedua menyimpulkan/menyetujui hal-hal sebagai berikut:', [], ['alignment' => Jc::BOTH]);
             $section->addTextBreak(1);

@@ -17,14 +17,16 @@ class ReportController extends Controller
         $myBapIds = $request->cookie('my_baps');
         $myBapIds = $myBapIds ? explode(',', $myBapIds) : [];
         
+        // Count reports
+        $reportCount = !empty($myReportIds) ? Report::whereIn('id', $myReportIds)->count() : 0;
+        $bapCount = !empty($myBapIds) ? Bap::whereIn('id', $myBapIds)->count() : 0;
+        $totalReports = $reportCount + $bapCount;
+        
         if (empty($myReportIds)) {
-            $totalReports = 0;
             $kondisiBaik = 0;
             $kondisiProblem = 0;
             $bulanIni = 0;
         } else {
-            $totalReports = Report::whereIn('id', $myReportIds)->count();
-            
             $kondisiBaik = ReportItem::whereIn('report_id', $myReportIds)
                 ->where('kondisi', 'baik')->count();
             
@@ -37,49 +39,139 @@ class ReportController extends Controller
                 ->count();
         }
         
-        // Combine Reports and BAPs for recent items
-        $recentItems = collect();
+        // Add BAP count to bulanIni
+        if (!empty($myBapIds)) {
+            $bulanIni += Bap::whereIn('id', $myBapIds)
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->count();
+        }
+        
+        // Get filter parameters
+        $search = $request->input('search');
+        $jenisLaporan = $request->input('jenis_laporan');
+        $bulanFilter = $request->input('bulan');
+        
+        // Combine Reports and BAPs for all items with filters
+        $allItems = collect();
         
         if (!empty($myReportIds)) {
-            $reports = Report::whereIn('id', $myReportIds)
-                ->latest()
-                ->take(5)
-                ->get()
-                ->map(function($report) {
+            $reportsQuery = Report::whereIn('id', $myReportIds);
+            
+            // Apply search filter
+            if ($search) {
+                $reportsQuery->where(function($q) use ($search) {
+                    $q->where('nama_kegiatan', 'like', '%' . $search . '%')
+                      ->orWhere('jenis_kegiatan', 'like', '%' . $search . '%')
+                      ->orWhere('lokasi_kegiatan', 'like', '%' . $search . '%');
+                });
+            }
+            
+            // Apply month filter
+            if ($bulanFilter) {
+                $reportsQuery->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanFilter]);
+            }
+            
+            // Apply jenis filter - skip reports if filtering for BAP only
+            if ($jenisLaporan === 'bap') {
+                // Skip reports
+            } else {
+                $reports = $reportsQuery->get()->map(function($report) {
                     return (object)[
                         'id' => $report->id,
                         'type' => 'report',
                         'nama' => $report->nama_kegiatan ?? '-',
                         'jenis_laporan' => 'Report Kegiatan',
+                        'jenis_kegiatan' => $report->jenis_kegiatan ?? '-',
                         'detail' => $report->lokasi_kegiatan ?? '-',
                         'created_at' => $report->created_at,
                     ];
                 });
-            $recentItems = $recentItems->merge($reports);
+                $allItems = $allItems->merge($reports);
+            }
         }
         
         if (!empty($myBapIds)) {
-            $baps = Bap::whereIn('id', $myBapIds)
-                ->latest()
-                ->take(5)
-                ->get()
-                ->map(function($bap) {
+            $bapsQuery = Bap::whereIn('id', $myBapIds);
+            
+            // Apply search filter for BAP
+            if ($search) {
+                $bapsQuery->where(function($q) use ($search) {
+                    $q->where('nomor_bap', 'like', '%' . $search . '%')
+                      ->orWhere('nomor_surat_permohonan', 'like', '%' . $search . '%');
+                });
+            }
+            
+            // Apply month filter
+            if ($bulanFilter) {
+                $bapsQuery->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanFilter]);
+            }
+            
+            // Apply jenis filter - skip BAP if filtering for report only
+            if ($jenisLaporan === 'report') {
+                // Skip BAP
+            } else {
+                $baps = $bapsQuery->get()->map(function($bap) {
                     return (object)[
                         'id' => $bap->id,
                         'type' => 'bap',
                         'nama' => $bap->nomor_bap,
                         'jenis_laporan' => 'BAP',
+                        'jenis_kegiatan' => 'Berita Acara Pemeriksaan',
                         'detail' => $bap->tanggal_bap->format('d M Y'),
                         'created_at' => $bap->created_at,
                     ];
                 });
-            $recentItems = $recentItems->merge($baps);
+                $allItems = $allItems->merge($baps);
+            }
         }
         
-        // Sort by created_at and take 5
-        $recentItems = $recentItems->sortByDesc('created_at')->take(5)->values();
+        // Sort by created_at desc
+        $allItems = $allItems->sortByDesc('created_at')->values();
         
-        return view('dashboard', compact('totalReports', 'kondisiBaik', 'kondisiProblem', 'bulanIni', 'recentItems'));
+        // Manual pagination
+        $perPage = 10;
+        $currentPage = $request->input('page', 1);
+        $total = $allItems->count();
+        $items = $allItems->forPage($currentPage, $perPage);
+        
+        $allItemsPaginated = new \Illuminate\Pagination\LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+        
+        // Get available months for filter dropdown
+        $availableMonths = collect();
+        if (!empty($myReportIds)) {
+            $reportMonths = Report::whereIn('id', $myReportIds)
+                ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month")
+                ->distinct()
+                ->pluck('month');
+            $availableMonths = $availableMonths->merge($reportMonths);
+        }
+        if (!empty($myBapIds)) {
+            $bapMonths = Bap::whereIn('id', $myBapIds)
+                ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as month")
+                ->distinct()
+                ->pluck('month');
+            $availableMonths = $availableMonths->merge($bapMonths);
+        }
+        $availableMonths = $availableMonths->unique()->sort()->reverse()->values();
+        
+        return view('dashboard', compact(
+            'totalReports', 
+            'kondisiBaik', 
+            'kondisiProblem', 
+            'bulanIni', 
+            'allItemsPaginated',
+            'availableMonths',
+            'search',
+            'jenisLaporan',
+            'bulanFilter'
+        ));
     }
 
     public function riwayat(Request $request)

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\BapController;
+use App\Http\Controllers\UtilizationReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('dashboard'));
@@ -22,5 +23,12 @@ Route::get('/bap/create', [BapController::class, 'create'])->name('bap.create');
 Route::post('/bap', [BapController::class, 'store'])->name('bap.store');
 Route::get('/bap/{bap}', [BapController::class, 'show'])->name('bap.show');
 Route::get('/bap/{bap}/word', [BapController::class, 'word'])->name('bap.word');
+
+// Utilization Report
+Route::get('/utilization', [UtilizationReportController::class, 'index'])->name('utilization.index');
+Route::get('/utilization/create', [UtilizationReportController::class, 'create'])->name('utilization.create');
+Route::post('/utilization', [UtilizationReportController::class, 'store'])->name('utilization.store');
+Route::get('/utilization/{utilization}', [UtilizationReportController::class, 'show'])->name('utilization.show');
+Route::get('/utilization/{utilization}/excel', [UtilizationReportController::class, 'excel'])->name('utilization.excel');
 
 

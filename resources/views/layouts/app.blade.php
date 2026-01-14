@@ -466,6 +466,26 @@
         </a>
       </div>
     </div>
+
+    <div class="nav-group {{ request()->routeIs('utilization.*') ? 'open' : '' }}">
+      <div class="nav-group-header" onclick="this.parentElement.classList.toggle('open')">
+        <div class="nav-group-left">
+          <span class="nav-group-icon">◩</span>
+          Utilization Report
+        </div>
+        <span class="nav-group-arrow">▸</span>
+      </div>
+      <div class="nav-group-items">
+        <a href="{{ route('utilization.create') }}" class="nav-subitem {{ request()->routeIs('utilization.create') ? 'active' : '' }}">
+          <span class="nav-subicon"></span>
+          Buat Baru
+        </a>
+        <a href="{{ route('utilization.index') }}" class="nav-subitem {{ request()->routeIs('utilization.index') ? 'active' : '' }}">
+          <span class="nav-subicon"></span>
+          Riwayat
+        </a>
+      </div>
+    </div>
   </nav>
 
   <div class="sidebar-footer">

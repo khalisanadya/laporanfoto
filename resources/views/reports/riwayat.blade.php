@@ -182,47 +182,6 @@
     margin-top: 24px;
   }
 
-  .pagination{
-    display: flex;
-    gap: 6px;
-    list-style: none;
-  }
-
-  .pagination li a,
-  .pagination li span{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 36px;
-    height: 36px;
-    padding: 0 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: #fff;
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 500;
-    text-decoration: none;
-    transition: all .2s ease;
-  }
-
-  .pagination li a:hover{
-    background: var(--primary-bg);
-    border-color: var(--primary);
-    color: var(--primary);
-  }
-
-  .pagination li.active span{
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
-  }
-
-  .pagination li.disabled span{
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
   .stats-mini{
     display: flex;
     gap: 16px;
@@ -247,18 +206,10 @@
 
 <div class="card">
   <div class="card-header">
-    <h3 class="card-title">Semua Laporan</h3>
-    <div class="stats-mini">
-      <div class="stat-mini">
-        <strong>{{ $reports->total() }}</strong> laporan
-      </div>
+    <div class="card-header-left">
+      <h3 class="card-title">Daftar Report Kegiatan</h3>
     </div>
-  </div>
-
-  <div class="filter-bar">
-    <form class="search-box" method="GET" action="{{ route('reports.riwayat') }}">
-      <input type="text" name="search" placeholder="Cari laporan..." value="{{ request('search') }}">
-    </form>
+    <a href="{{ route('reports.create') }}" class="btn btn-primary btn-sm">+ Buat Report Baru</a>
   </div>
 
   @if($reports->count() > 0)

@@ -1,48 +1,26 @@
 @extends('layouts.app')
 
-@section('title', 'Riwayat BAP - Report System')
-@section('header', 'Riwayat Berita Acara Pemeriksaan')
+@section('title', 'Riwayat Utilization Report - Report System')
+@section('header', 'Riwayat Utilization Report')
 
 @section('styles')
-  .search-box{
-    display: flex;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-
-  .search-input{
-    flex: 1;
-    padding: 12px 16px;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    font-size: 14px;
-    font-family: inherit;
-    transition: all .2s ease;
-  }
-
-  .search-input:focus{
-    outline: none;
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px var(--primary-bg);
-  }
-
-  .table-wrap{
+<style>
+  .table-wrap {
     overflow-x: auto;
-    margin-top: 16px;
   }
 
-  table{
+  table {
     width: 100%;
     border-collapse: collapse;
   }
 
-  th, td{
+  th, td {
     padding: 14px 16px;
     text-align: left;
     border-bottom: 1px solid var(--border);
   }
 
-  th{
+  th {
     background: #f8fafc;
     font-size: 12px;
     font-weight: 700;
@@ -51,21 +29,21 @@
     letter-spacing: 0.5px;
   }
 
-  td{
+  td {
     font-size: 14px;
     color: var(--text);
   }
 
-  tr:hover td{
+  tr:hover td {
     background: #fafbfc;
   }
 
-  .action-buttons{
+  .action-buttons {
     display: flex;
     gap: 8px;
   }
 
-  .btn-icon{
+  .btn-icon {
     width: 34px;
     height: 34px;
     border-radius: 8px;
@@ -81,79 +59,77 @@
     color: var(--text);
   }
 
-  .btn-icon:hover{
+  .btn-icon:hover {
     background: var(--primary-bg);
     border-color: var(--primary);
     color: var(--primary);
   }
 
-  .btn-icon.word{
-    color: #2563eb;
-    border-color: #bfdbfe;
+  .btn-icon.excel {
+    color: #16a34a;
+    border-color: #bbf7d0;
   }
 
-  .btn-icon.word:hover{
-    background: #eff6ff;
-    border-color: #2563eb;
+  .btn-icon.excel:hover {
+    background: #f0fdf4;
+    border-color: #16a34a;
   }
 
-  .empty-state{
+  .empty-state {
     text-align: center;
     padding: 48px 20px;
     color: var(--muted);
   }
 
-  .empty-state-icon{
+  .empty-state-icon {
     font-size: 48px;
     margin-bottom: 16px;
     opacity: 0.5;
   }
 
-  .pagination-wrap{
+  .pagination-wrap {
     display: flex;
     justify-content: center;
     padding: 20px 0;
   }
+</style>
 @endsection
 
 @section('content')
-
 <div class="card">
   <div class="card-header">
     <div class="card-header-left">
-      <h3 class="card-title">Daftar BAP</h3>
+      <h3 class="card-title">Daftar Utilization Report</h3>
     </div>
-    <a href="{{ route('bap.create') }}" class="btn btn-primary btn-sm">+ Buat BAP Baru</a>
+    <a href="{{ route('utilization.create') }}" class="btn btn-primary btn-sm">+ Buat Report Baru</a>
   </div>
 
-  @if($baps->count() > 0)
+  @if($reports->count() > 0)
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
             <th>No</th>
-            <th>Nomor BAP</th>
-            <th>Tanggal BAP</th>
-            <th>Nomor Surat Permohonan</th>
+            <th>Judul</th>
+            <th>Periode</th>
             <th>Tanggal Dibuat</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody>
-          @foreach($baps as $index => $bap)
+          @foreach($reports as $index => $report)
             <tr>
-              <td>{{ $baps->firstItem() + $index }}</td>
-              <td><strong>{{ $bap->nomor_bap }}</strong></td>
-              <td>{{ $bap->tanggal_bap->format('d M Y') }}</td>
-              <td>{{ $bap->nomor_surat_permohonan }}</td>
-              <td>{{ $bap->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i') }}</td>
+              <td>{{ $reports->firstItem() + $index }}</td>
+              <td><strong>{{ $report->judul }}</strong></td>
+              <td>{{ $report->periode_mulai->format('d M Y') }} - {{ $report->periode_selesai->format('d M Y') }}</td>
+              <td>{{ $report->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i') }}</td>
               <td>
                 <div class="action-buttons">
-                  <a href="{{ route('bap.show', $bap) }}" class="btn-icon" title="Preview">
-                    ◎
+                  <a href="{{ route('utilization.show', $report) }}" class="btn-icon" title="Preview">
+                    ⊙
                   </a>
-                  <a href="{{ route('bap.word', $bap) }}" class="btn-icon word" title="Download Word">
-                    W
+                  <a href="{{ route('utilization.excel', $report) }}" class="btn-icon excel" title="Download Excel">
+                    E
                   </a>
                 </div>
               </td>
@@ -163,17 +139,16 @@
       </table>
     </div>
 
-    @if($baps->hasPages())
+    @if($reports->hasPages())
       <div class="pagination-wrap">
-        {{ $baps->links() }}
+        {{ $reports->links() }}
       </div>
     @endif
   @else
     <div class="empty-state">
-      <div class="empty-state-icon">📄</div>
-      <p>Belum ada BAP yang dibuat</p>
+      <div class="empty-state-icon">▢</div>
+      <p>Belum ada Utilization Report yang dibuat</p>
     </div>
   @endif
 </div>
-
 @endsection

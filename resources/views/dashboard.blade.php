@@ -247,6 +247,103 @@
     background: #eff6ff;
     border-color: #2563eb;
   }
+
+  /* Filter Bar */
+  .filter-bar{
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    padding: 16px 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .filter-group{
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .filter-label{
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .filter-input{
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    background: #fff;
+    min-width: 180px;
+    height: 38px;
+    transition: all .2s ease;
+  }
+
+  .filter-input:focus{
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(14,165,233,.15);
+  }
+
+  .filter-input.search{
+    min-width: 250px;
+  }
+
+  .filter-btn{
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s ease;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .filter-btn:hover{
+    box-shadow: 0 4px 12px rgba(3,105,161,.3);
+    transform: translateY(-1px);
+  }
+
+  .filter-btn.reset{
+    background: #fff;
+    color: var(--text);
+    border: 1.5px solid var(--border);
+  }
+
+  .filter-btn.reset:hover{
+    background: #f1f5f9;
+    box-shadow: none;
+  }
+
+  .pagination-wrap{
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+  }
+
+  .result-info{
+    padding: 12px 20px;
+    background: var(--primary-bg);
+    border-bottom: 1px solid var(--primary-border);
+    font-size: 13px;
+    color: var(--primary-dark);
+  }
+
+  .result-info strong{
+    font-weight: 700;
+  }
 @endsection
 
 @section('content')
@@ -281,10 +378,52 @@
 <!-- Recent Reports -->
 <div class="card">
   <div class="card-header">
-    <h3 class="card-title">Laporan Terbaru</h3>
+    <h3 class="card-title">Semua Laporan</h3>
   </div>
 
-  @if($recentItems->count() > 0)
+  <!-- Filter Bar -->
+  <form class="filter-bar" method="GET" action="{{ route('dashboard') }}">
+    <div class="filter-group">
+      <label class="filter-label">Cari Nama/Nomor</label>
+      <input type="text" name="search" class="filter-input search" placeholder="Ketik nama laporan..." value="{{ $search ?? '' }}">
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Jenis Laporan</label>
+      <select name="jenis_laporan" class="filter-input">
+        <option value="all" {{ ($jenisLaporan ?? '') === 'all' ? 'selected' : '' }}>Semua Jenis</option>
+        <option value="report" {{ ($jenisLaporan ?? '') === 'report' ? 'selected' : '' }}>Report Kegiatan</option>
+        <option value="bap" {{ ($jenisLaporan ?? '') === 'bap' ? 'selected' : '' }}>BAP</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">Bulan</label>
+      <select name="bulan" class="filter-input">
+        <option value="">Semua Bulan</option>
+        @foreach($availableMonths ?? [] as $month)
+          @php
+            $monthDate = \Carbon\Carbon::createFromFormat('Y-m', $month);
+          @endphp
+          <option value="{{ $month }}" {{ ($bulanFilter ?? '') === $month ? 'selected' : '' }}>
+            {{ $monthDate->translatedFormat('F Y') }}
+          </option>
+        @endforeach
+      </select>
+    </div>
+
+    <button type="submit" class="filter-btn">
+      Cari
+    </button>
+  </form>
+
+  @if($allItemsPaginated->total() > 0)
+    <div class="result-info">
+      Menampilkan <strong>{{ $allItemsPaginated->firstItem() }} - {{ $allItemsPaginated->lastItem() }}</strong> dari <strong>{{ $allItemsPaginated->total() }}</strong> laporan
+    </div>
+  @endif
+
+  @if($allItemsPaginated->count() > 0)
     <div class="table-wrap">
       <table>
         <thead>
@@ -297,9 +436,9 @@
           </tr>
         </thead>
         <tbody>
-          @foreach($recentItems as $index => $item)
+          @foreach($allItemsPaginated as $index => $item)
             <tr>
-              <td>{{ $index + 1 }}</td>
+              <td>{{ $allItemsPaginated->firstItem() + $index }}</td>
               <td><strong>{{ $item->nama }}</strong></td>
               <td>
                 @if($item->type === 'report')
@@ -336,10 +475,22 @@
         </tbody>
       </table>
     </div>
+
+    @if($allItemsPaginated->hasPages())
+      <div class="pagination-wrap">
+        {{ $allItemsPaginated->links() }}
+      </div>
+    @endif
   @else
     <div class="empty-state">
       <div class="empty-state-icon">≡</div>
-      <p>Belum ada laporan yang dibuat</p>
+      <p>
+        @if($search || $jenisLaporan || $bulanFilter)
+          Tidak ada laporan yang sesuai dengan filter
+        @else
+          Belum ada laporan yang dibuat
+        @endif
+      </p>
     </div>
   @endif
 </div>
