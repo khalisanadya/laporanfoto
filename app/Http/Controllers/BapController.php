@@ -153,7 +153,7 @@ class BapController extends Controller
 
             // Point 1
             $p1 = $section->addTextRun(['alignment' => Jc::BOTH]);
-            $p1->addText('1.  ');
+            $p1->addText('1. ');
             $p1->addText('Surat Perintah Kerja', ['italic' => true, 'bold' => true]);
             $p1->addText(' yang dikeluarkan PT Telemedia Dinamika Sarana Nomor : ');
             $p1->addText('152600.SPK/LG.01.03/UT/2025', ['bold' => true]);
@@ -163,21 +163,17 @@ class BapController extends Controller
             $p1->addText('Jasa Instalasi dan Managed Service Access Point (AP) PGNMAS site GS8 (Jakarta) dan Kebonwaru (Bandung)', ['bold' => true]);
             $p1->addText(' ("Kontrak");');
 
-            $section->addTextBreak(1);
-
             // Point 2
             $p2 = $section->addTextRun(['alignment' => Jc::BOTH]);
-            $p2->addText('2.  Surat dari PT.Telemedia Mitra Elektrotama Nomor: ');
+            $p2->addText('2. Surat dari PT.Telemedia Mitra Elektrotama Nomor: ');
             $p2->addText($bap->nomor_surat_permohonan, ['bold' => true]);
             $p2->addText(' tanggal ');
             $p2->addText($tglSurat->day . ' ' . $bulanSurat . ' ' . $tglSurat->year, ['bold' => true]);
             $p2->addText(' perihal Surat Permohonan Pemeriksaan Pekerjaan;');
 
-            $section->addTextBreak(1);
-
             // Point 3
             $p3 = $section->addTextRun(['alignment' => Jc::BOTH]);
-            $p3->addText('3.  ');
+            $p3->addText('3. ');
             $p3->addText('Laporan Pekerjaan', ['italic' => true, 'bold' => true]);
             $p3->addText(' Jasa Instalasi dan Managed Service Access Point (AP) PGNMAS site GS8 (Jakarta) dan Kebonwaru (Bandung) Periode Desember 2025 dari pihak Kedua;');
 
@@ -188,15 +184,13 @@ class BapController extends Controller
 
             // Hasil 1
             $h1 = $section->addTextRun(['alignment' => Jc::BOTH]);
-            $h1->addText('1.  Penyedia Jasa telah menyelesaikan pekerjaan ');
+            $h1->addText('1. Penyedia Jasa telah menyelesaikan pekerjaan ');
             $h1->addText('Jasa Instalasi dan Managed Service Access Point (AP) PGNMAS site GS8 (Jakarta) dan Kebonwaru (Bandung)', ['bold' => true]);
             $h1->addText(' periode Desember 2025 sesuai dengan syarat-syarat yang ditentukan dalam Surat Perintah Kerja.');
 
-            $section->addTextBreak(1);
-
             // Hasil 2
             $h2 = $section->addTextRun(['alignment' => Jc::BOTH]);
-            $h2->addText('2.  Penyedia Jasa berhak menerima pembayaran periode Desember 2025 yaitu sebesar: ');
+            $h2->addText('2. Penyedia Jasa berhak menerima pembayaran periode Desember 2025 yaitu sebesar: ');
             $h2->addText('Rp. 8.900.000,- (Delapan Juta Sembilan Ratus Ribu Rupiah)', ['bold' => true]);
             $h2->addText(', belum termasuk PPN dan pajak – pajak yang berlaku sesuai ketentuan.');
 
