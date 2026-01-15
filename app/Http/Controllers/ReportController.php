@@ -59,77 +59,16 @@ class ReportController extends Controller
         // Combine Reports, BAPs, and Utilization Reports for all items with filters
         $allItems = collect();
 
-        if (!empty($myReportIds)) {
-            $reportsQuery = Report::whereIn('id', $myReportIds);
-            // ...existing code...
-            if ($search) {
-                $reportsQuery->where(function($q) use ($search) {
-                    $q->where('nama_kegiatan', 'like', '%' . $search . '%')
-                      ->orWhere('jenis_kegiatan', 'like', '%' . $search . '%')
-                      ->orWhere('lokasi_kegiatan', 'like', '%' . $search . '%');
-                });
-            }
-            if ($bulanFilter) {
-                $reportsQuery->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanFilter]);
-            }
-            if ($jenisLaporan === 'bap') {
-                // Skip reports
-            } else {
-                $reports = $reportsQuery->get()->map(function($report) {
-                    return (object)[
-                        'id' => $report->id,
-                        'type' => 'report',
-                        'nama' => $report->nama_kegiatan ?? '-',
-                        'jenis_laporan' => 'Report Kegiatan',
-                        'jenis_kegiatan' => $report->jenis_kegiatan ?? '-',
-                        'detail' => $report->lokasi_kegiatan ?? '-',
-                        'created_at' => $report->created_at,
-                    ];
-                });
-                $allItems = $allItems->merge($reports);
-            }
-        }
-
-        if (!empty($myBapIds)) {
-            $bapsQuery = Bap::whereIn('id', $myBapIds);
-            if ($search) {
-                $bapsQuery->where(function($q) use ($search) {
-                    $q->where('nomor_bap', 'like', '%' . $search . '%')
-                      ->orWhere('nomor_surat_permohonan', 'like', '%' . $search . '%');
-                });
-            }
-            if ($bulanFilter) {
-                $bapsQuery->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanFilter]);
-            }
-            if ($jenisLaporan === 'report') {
-                // Skip BAP
-            } else {
-                $baps = $bapsQuery->get()->map(function($bap) {
-                    return (object)[
-                        'id' => $bap->id,
-                        'type' => 'bap',
-                        'nama' => $bap->nomor_bap,
-                        'jenis_laporan' => 'BAP',
-                        'jenis_kegiatan' => 'Berita Acara Pemeriksaan',
-                        'detail' => $bap->tanggal_bap->format('d M Y'),
-                        'created_at' => $bap->created_at,
-                    ];
-                });
-                $allItems = $allItems->merge($baps);
-            }
-        }
-
-        if (!empty($myUtilizationIds)) {
-            $utilQuery = \App\Models\UtilizationReport::whereIn('id', $myUtilizationIds);
-            if ($search) {
-                $utilQuery->where('judul', 'like', '%' . $search . '%');
-            }
-            if ($bulanFilter) {
-                $utilQuery->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanFilter]);
-            }
-            if ($jenisLaporan === 'report' || $jenisLaporan === 'bap') {
-                // Skip utilization jika filter report/bap saja
-            } else {
+        // Filter berdasarkan jenis laporan
+        if ($jenisLaporan === 'utilization') {
+            if (!empty($myUtilizationIds)) {
+                $utilQuery = \App\Models\UtilizationReport::whereIn('id', $myUtilizationIds);
+                if ($search) {
+                    $utilQuery->where('judul', 'like', '%' . $search . '%');
+                }
+                if ($bulanFilter) {
+                    $utilQuery->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanFilter]);
+                }
                 $utils = $utilQuery->get()->map(function($util) {
                     return (object)[
                         'id' => $util->id,
@@ -142,6 +81,91 @@ class ReportController extends Controller
                     ];
                 });
                 $allItems = $allItems->merge($utils);
+            }
+        } else {
+            if (!empty($myReportIds)) {
+                $reportsQuery = Report::whereIn('id', $myReportIds);
+                if ($search) {
+                    $reportsQuery->where(function($q) use ($search) {
+                        $q->where('nama_kegiatan', 'like', '%' . $search . '%')
+                          ->orWhere('jenis_kegiatan', 'like', '%' . $search . '%')
+                          ->orWhere('lokasi_kegiatan', 'like', '%' . $search . '%');
+                    });
+                }
+                if ($bulanFilter) {
+                    $reportsQuery->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanFilter]);
+                }
+                if ($jenisLaporan === 'bap') {
+                    // Skip reports
+                } else {
+                    $reports = $reportsQuery->get()->map(function($report) {
+                        return (object)[
+                            'id' => $report->id,
+                            'type' => 'report',
+                            'nama' => $report->nama_kegiatan ?? '-',
+                            'jenis_laporan' => 'Report Kegiatan',
+                            'jenis_kegiatan' => $report->jenis_kegiatan ?? '-',
+                            'detail' => $report->lokasi_kegiatan ?? '-',
+                            'created_at' => $report->created_at,
+                        ];
+                    });
+                    $allItems = $allItems->merge($reports);
+                }
+            }
+
+            if (!empty($myBapIds)) {
+                $bapsQuery = Bap::whereIn('id', $myBapIds);
+                if ($search) {
+                    $bapsQuery->where(function($q) use ($search) {
+                        $q->where('nomor_bap', 'like', '%' . $search . '%')
+                          ->orWhere('nomor_surat_permohonan', 'like', '%' . $search . '%');
+                    });
+                }
+                if ($bulanFilter) {
+                    $bapsQuery->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanFilter]);
+                }
+                if ($jenisLaporan === 'report') {
+                    // Skip BAP
+                } else {
+                    $baps = $bapsQuery->get()->map(function($bap) {
+                        return (object)[
+                            'id' => $bap->id,
+                            'type' => 'bap',
+                            'nama' => $bap->nomor_bap,
+                            'jenis_laporan' => 'BAP',
+                            'jenis_kegiatan' => 'Berita Acara Pemeriksaan',
+                            'detail' => $bap->tanggal_bap->format('d M Y'),
+                            'created_at' => $bap->created_at,
+                        ];
+                    });
+                    $allItems = $allItems->merge($baps);
+                }
+            }
+
+            if (!empty($myUtilizationIds)) {
+                $utilQuery = \App\Models\UtilizationReport::whereIn('id', $myUtilizationIds);
+                if ($search) {
+                    $utilQuery->where('judul', 'like', '%' . $search . '%');
+                }
+                if ($bulanFilter) {
+                    $utilQuery->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanFilter]);
+                }
+                if ($jenisLaporan === 'report' || $jenisLaporan === 'bap') {
+                    // Skip utilization jika filter report/bap saja
+                } else {
+                    $utils = $utilQuery->get()->map(function($util) {
+                        return (object)[
+                            'id' => $util->id,
+                            'type' => 'utilization',
+                            'nama' => $util->judul ?? '-',
+                            'jenis_laporan' => 'Utilization Report',
+                            'jenis_kegiatan' => '-',
+                            'detail' => $util->periode_mulai->format('d M Y') . ' - ' . $util->periode_selesai->format('d M Y'),
+                            'created_at' => $util->created_at,
+                        ];
+                    });
+                    $allItems = $allItems->merge($utils);
+                }
             }
         }
         

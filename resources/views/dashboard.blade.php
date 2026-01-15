@@ -394,6 +394,7 @@
         <option value="all" {{ ($jenisLaporan ?? '') === 'all' ? 'selected' : '' }}>Semua Jenis</option>
         <option value="report" {{ ($jenisLaporan ?? '') === 'report' ? 'selected' : '' }}>Report Kegiatan</option>
         <option value="bap" {{ ($jenisLaporan ?? '') === 'bap' ? 'selected' : '' }}>BAP</option>
+        <option value="utilization" {{ ($jenisLaporan ?? '') === 'utilization' ? 'selected' : '' }}>Utilization Report</option>
       </select>
     </div>
 
