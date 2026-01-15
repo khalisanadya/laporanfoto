@@ -73,15 +73,17 @@ class UtilizationReportController extends Controller
                         UtilizationItem::create([
                             'utilization_section_id' => $section->id,
                             'nama_interface' => $itemData['nama_interface'] ?? null,
-                            'label' => $itemData['label'] ?? null,
+                            // label caption dari form
+                            'label' => $itemData['label_caption'] ?? ($itemData['label'] ?? null),
                             'inbound_current' => $itemData['inbound_current'] ?? null,
                             'inbound_average' => $itemData['inbound_average'] ?? null,
                             'inbound_maximum' => $itemData['inbound_maximum'] ?? null,
                             'outbound_current' => $itemData['outbound_current'] ?? null,
                             'outbound_average' => $itemData['outbound_average'] ?? null,
                             'outbound_maximum' => $itemData['outbound_maximum'] ?? null,
-                            'inbound_value' => $itemData['inbound_value'] ?? null,
-                            'outbound_value' => $itemData['outbound_value'] ?? null,
+                            // label inbound/outbound dari form
+                            'inbound_value' => $itemData['label_inbound'] ?? ($itemData['inbound_value'] ?? null),
+                            'outbound_value' => $itemData['label_outbound'] ?? ($itemData['outbound_value'] ?? null),
                             'gambar_graph' => $gambarPath,
                             'urutan' => $itemIndex,
                         ]);
@@ -131,29 +133,33 @@ class UtilizationReportController extends Controller
         // Set default column widths
         $sheet->getDefaultColumnDimension()->setWidth(15);
         $sheet->getColumnDimension('A')->setWidth(40);
-        $sheet->getColumnDimension('B')->setWidth(15);
-        $sheet->getColumnDimension('C')->setWidth(15);
+        $sheet->getColumnDimension('B')->setWidth(20);
+        $sheet->getColumnDimension('C')->setWidth(20);
+        $sheet->getColumnDimension('D')->setWidth(20);
+        $sheet->getColumnDimension('E')->setWidth(20);
+        $sheet->getColumnDimension('F')->setWidth(20);
+        $sheet->getColumnDimension('G')->setWidth(20);
+        $sheet->getColumnDimension('H')->setWidth(20);
 
         $row = 1;
 
         // Title
-        $sheet->setCellValue('A' . $row, $utilization->judul);
-        $sheet->mergeCells('A' . $row . ':H' . $row);
-        $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(16);
-        $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $sheet->setCellValue('D' . $row, $utilization->judul);
+        $sheet->mergeCells('D' . $row . ':F' . $row);
+        $sheet->getStyle('D' . $row . ':F' . $row)->getFont()->setBold(true)->setSize(16);
+        $sheet->getStyle('D' . $row . ':F' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $row++;
 
         // Period
         $periodeText = 'Periode: ' . $utilization->periode_mulai->translatedFormat('d F Y') . ' - ' . $utilization->periode_selesai->translatedFormat('d F Y');
         $sheet->setCellValue('A' . $row, $periodeText);
         $sheet->mergeCells('A' . $row . ':H' . $row);
-        $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        $sheet->getStyle('A' . $row . ':H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
         $row += 2;
 
         foreach ($utilization->sections as $section) {
-            // Section header
+            // Section header (warna hanya sepanjang teks)
             $sheet->setCellValue('A' . $row, $section->nama_section);
-            $sheet->mergeCells('A' . $row . ':H' . $row);
             $sheet->getStyle('A' . $row)->getFill()
                 ->setFillType(Fill::FILL_SOLID)
                 ->getStartColor()->setARGB(str_replace('#', '', $section->warna_header));
@@ -162,57 +168,28 @@ class UtilizationReportController extends Controller
 
             // Items
             foreach ($section->items as $item) {
-                if ($item->nama_interface) {
-                    $sheet->setCellValue('A' . $row, $item->nama_interface);
-                    $sheet->mergeCells('A' . $row . ':H' . $row);
-                    $sheet->getStyle('A' . $row)->getFont()->setSize(10);
-                    $row++;
-
-                    // Add graph image if exists
-                    if ($item->gambar_graph && Storage::disk('public')->exists($item->gambar_graph)) {
-                        $imagePath = Storage::disk('public')->path($item->gambar_graph);
-                        
-                        $drawing = new Drawing();
-                        $drawing->setName('Graph');
-                        $drawing->setDescription('Traffic Graph');
-                        $drawing->setPath($imagePath);
-                        $drawing->setHeight(120);
-                        $drawing->setCoordinates('A' . $row);
-                        $drawing->setWorksheet($sheet);
-                        
-                        $row += 8; // Space for image
-                    }
-
-                    // Stats row
-                    if ($item->inbound_current || $item->inbound_average || $item->inbound_maximum) {
-                        $sheet->setCellValue('A' . $row, 'Inbound');
-                        $sheet->setCellValue('B' . $row, 'Current: ' . $item->inbound_current);
-                        $sheet->setCellValue('C' . $row, 'Average: ' . $item->inbound_average);
-                        $sheet->setCellValue('D' . $row, 'Maximum: ' . $item->inbound_maximum);
-                        $sheet->getStyle('A' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('90EE90');
-                        $row++;
-
-                        $sheet->setCellValue('A' . $row, 'Outbound');
-                        $sheet->setCellValue('B' . $row, 'Current: ' . $item->outbound_current);
-                        $sheet->setCellValue('C' . $row, 'Average: ' . $item->outbound_average);
-                        $sheet->setCellValue('D' . $row, 'Maximum: ' . $item->outbound_maximum);
-                        $sheet->getStyle('A' . $row)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('ADD8E6');
-                        $row++;
-                    }
+                // Add graph image first, bigger size
+                if ($item->gambar_graph && Storage::disk('public')->exists($item->gambar_graph)) {
+                    $imagePath = Storage::disk('public')->path($item->gambar_graph);
+                    $drawing = new Drawing();
+                    $drawing->setName('Graph');
+                    $drawing->setDescription('Traffic Graph');
+                    $drawing->setPath($imagePath);
+                    $drawing->setHeight(220); // Perbesar gambar
+                    $drawing->setCoordinates('A' . $row);
+                    $drawing->setWorksheet($sheet);
+                    $row += 14; // Space for bigger image
                 }
-
-                // Label summary (IPTR, PGAS IX, etc.)
-                if ($item->label) {
-                    $sheet->setCellValue('A' . $row, $item->label);
+                // Label, inbound, outbound di bawah gambar
+                if ($item->label || $item->inbound_value || $item->outbound_value) {
+                    $sheet->setCellValue('A' . $row, $item->label ?? '-');
                     $sheet->getStyle('A' . $row)->getFont()->setBold(true);
                     $row++;
-
                     $sheet->setCellValue('A' . $row, 'INBOUND');
-                    $sheet->setCellValue('B' . $row, $item->inbound_value);
+                    $sheet->setCellValue('B' . $row, $item->inbound_value ?? '-');
                     $row++;
-
                     $sheet->setCellValue('A' . $row, 'OUTBOUND');
-                    $sheet->setCellValue('B' . $row, $item->outbound_value);
+                    $sheet->setCellValue('B' . $row, $item->outbound_value ?? '-');
                     $row++;
                 }
             }
@@ -220,45 +197,50 @@ class UtilizationReportController extends Controller
             // Summary table
             if ($section->summaries->count() > 0) {
                 $row++;
-                $startCol = 'A';
                 $colIndex = 0;
-
+                $colCount = count($section->summaries);
+                // Header row (kategori, merge 2 kolom per kategori)
                 foreach ($section->summaries as $summary) {
-                    $col = chr(ord('A') + ($colIndex * 2));
-                    $col2 = chr(ord('A') + ($colIndex * 2) + 1);
-
-                    if ($colIndex == 0) {
-                        // Header row
-                        $sheet->setCellValue($col . $row, $summary->kategori);
-                        $sheet->getStyle($col . $row . ':' . $col2 . $row)->getFill()
-                            ->setFillType(Fill::FILL_SOLID)
-                            ->getStartColor()->setARGB('F4A460');
-                        $sheet->getStyle($col . $row . ':' . $col2 . $row)->getFont()->setBold(true);
-                    }
+                    $col = chr(ord('A') + $colIndex * 2);
+                    $col2 = chr(ord('A') + $colIndex * 2 + 1);
+                    $sheet->setCellValue($col . $row, $summary->kategori);
+                    $sheet->mergeCells($col . $row . ':' . $col2 . $row);
+                    $sheet->getStyle($col . $row . ':' . $col2 . $row)->getFill()
+                        ->setFillType(Fill::FILL_SOLID)
+                        ->getStartColor()->setARGB('F4A460');
+                    $sheet->getStyle($col . $row . ':' . $col2 . $row)->getFont()->setBold(true);
+                    $sheet->getStyle($col . $row . ':' . $col2 . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $colIndex++;
                 }
+                // Border header
+                $sheet->getStyle('A' . $row . ':' . chr(ord('A') + $colCount * 2 - 1) . $row)
+                    ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                 $row++;
-
-                // INBOUND row
+                // INBOUND row: INBOUND, angka, INBOUND, angka, ...
                 $colIndex = 0;
                 foreach ($section->summaries as $summary) {
-                    $col = chr(ord('A') + ($colIndex * 2));
-                    $col2 = chr(ord('A') + ($colIndex * 2) + 1);
+                    $col = chr(ord('A') + $colIndex * 2);
+                    $col2 = chr(ord('A') + $colIndex * 2 + 1);
                     $sheet->setCellValue($col . $row, 'INBOUND');
                     $sheet->setCellValue($col2 . $row, $summary->inbound_value);
+                    $sheet->getStyle($col . $row . ':' . $col2 . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $colIndex++;
                 }
+                $sheet->getStyle('A' . $row . ':' . chr(ord('A') + $colCount * 2 - 1) . $row)
+                    ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                 $row++;
-
-                // OUTBOUND row
+                // OUTBOUND row: OUTBOUND, angka, OUTBOUND, angka, ...
                 $colIndex = 0;
                 foreach ($section->summaries as $summary) {
-                    $col = chr(ord('A') + ($colIndex * 2));
-                    $col2 = chr(ord('A') + ($colIndex * 2) + 1);
+                    $col = chr(ord('A') + $colIndex * 2);
+                    $col2 = chr(ord('A') + $colIndex * 2 + 1);
                     $sheet->setCellValue($col . $row, 'OUTBOUND');
                     $sheet->setCellValue($col2 . $row, $summary->outbound_value);
+                    $sheet->getStyle($col . $row . ':' . $col2 . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
                     $colIndex++;
                 }
+                $sheet->getStyle('A' . $row . ':' . chr(ord('A') + $colCount * 2 - 1) . $row)
+                    ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                 $row++;
             }
 

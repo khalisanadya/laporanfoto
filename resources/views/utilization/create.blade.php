@@ -391,7 +391,6 @@ function addSection() {
 
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
         <button type="button" class="btn-add" onclick="addItem(${sectionIndex})">+ Item Graph</button>
-        <button type="button" class="btn-add" onclick="addLabelItem(${sectionIndex})">+ Label Summary</button>
       </div>
 
       <div class="summary-box">
@@ -451,38 +450,6 @@ function addItem(secIdx) {
              onfocus="this.textContent=''"
              onblur="if(!this.querySelector('img')) this.textContent='Ctrl+V untuk paste screenshot'">
           Ctrl+V untuk paste screenshot
-        </div>
-      </div>
-    </div>
-  `;
-  container.insertAdjacentHTML('beforeend', html);
-  itemCounters[secIdx]++;
-}
-
-function addLabelItem(secIdx) {
-  if (!itemCounters[secIdx]) itemCounters[secIdx] = 0;
-  const itemIdx = itemCounters[secIdx];
-  const container = document.getElementById(`items-${secIdx}`);
-
-  const html = `
-    <div class="item-box" id="item-${secIdx}-${itemIdx}" data-type="label" style="background: #fffbeb;">
-      <div class="item-header">
-        <span class="item-badge label">Label Summary</span>
-        <button type="button" class="btn-remove" onclick="removeItem(${secIdx}, ${itemIdx})">Hapus</button>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Label</label>
-          <input type="text" name="sections[${secIdx}][items][${itemIdx}][label]" class="form-input" placeholder="IPTR">
-        </div>
-        <div class="form-group">
-          <label class="form-label">INBOUND</label>
-          <input type="text" name="sections[${secIdx}][items][${itemIdx}][inbound_value]" class="form-input" placeholder="2500 Mbps">
-        </div>
-        <div class="form-group">
-          <label class="form-label">OUTBOUND</label>
-          <input type="text" name="sections[${secIdx}][items][${itemIdx}][outbound_value]" class="form-input" placeholder="967 Mbps">
         </div>
       </div>
     </div>

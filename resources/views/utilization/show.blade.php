@@ -220,7 +220,7 @@
     </p>
     <div class="report-actions">
       <a href="{{ route('utilization.excel', $utilization) }}" class="btn-action excel">
-        📊 Download Excel
+        Download Excel
       </a>
     </div>
   </div>
@@ -264,19 +264,16 @@
               </div>
             @endif
 
-            @if($item->label)
-              <!-- Label Summary Item -->
-              <div class="label-block">
-                <div class="label-title">{{ $item->label }}</div>
-                <div class="label-values">
-                  <div class="label-value inbound">
-                    <span>INBOUND</span>
-                    <strong>{{ $item->inbound_value }}</strong>
-                  </div>
-                  <div class="label-value outbound">
-                    <span>OUTBOUND</span>
-                    <strong>{{ $item->outbound_value }}</strong>
-                  </div>
+            @if(!$item->nama_interface && $item->gambar_graph)
+              <!-- Graph Only Item -->
+              <div class="item-block">
+                <div class="graph-container">
+                  <img src="{{ asset('storage/' . $item->gambar_graph) }}" alt="Traffic Graph" class="graph-image">
+                </div>
+                <div class="photo-caption" style="margin-top:10px; font-size:13px; color:#64748b; background:#fefce8; border-radius:6px; padding:8px;">
+                  <div style="font-weight:700; color:#92400e; margin-bottom:4px;">{{ $item->label ?? '-' }}</div>
+                  <div style="color:#166534;">INBOUND <strong>{{ $item->inbound_value ?? '-' }}</strong></div>
+                  <div style="color:#1e40af;">OUTBOUND <strong>{{ $item->outbound_value ?? '-' }}</strong></div>
                 </div>
               </div>
             @endif
