@@ -501,6 +501,17 @@
   </header>
 
   <main class="page-content">
+    {{-- Notification / Flash Messages --}}
+    @if (session('success'))
+      <div class="alert alert-success" style="background:#d1e7dd;color:#0f5132;padding:12px 20px;margin-bottom:18px;border-radius:6px;border:1px solid #badbcc;">
+        <strong>Sukses!</strong> {{ session('success') }}
+      </div>
+    @endif
+    @if (session('error'))
+      <div class="alert alert-danger" style="background:#f8d7da;color:#842029;padding:12px 20px;margin-bottom:18px;border-radius:6px;border:1px solid #f5c2c7;">
+        <strong>Gagal!</strong> {{ session('error') }}
+      </div>
+    @endif
     @yield('content')
   </main>
 </div>

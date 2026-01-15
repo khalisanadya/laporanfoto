@@ -443,8 +443,10 @@
               <td>
                 @if($item->type === 'report')
                   <span class="badge badge-success">Report Kegiatan</span>
-                @else
+                @elseif($item->type === 'bap')
                   <span class="badge badge-info">BAP</span>
+                @elseif($item->type === 'utilization')
+                  <span class="badge badge-danger">Utilization Report</span>
                 @endif
               </td>
               <td>{{ $item->created_at->timezone('Asia/Jakarta')->format('d M Y, H:i') }}</td>
@@ -460,12 +462,19 @@
                     <a href="{{ route('reports.word', $item->id) }}" class="btn-icon word" title="Download Word">
                       W
                     </a>
-                  @else
+                  @elseif($item->type === 'bap')
                     <a href="{{ route('bap.show', $item->id) }}" class="btn-icon" title="Preview">
                       ◎
                     </a>
                     <a href="{{ route('bap.word', $item->id) }}" class="btn-icon word" title="Download Word">
                       W
+                    </a>
+                  @elseif($item->type === 'utilization')
+                    <a href="{{ route('utilization.show', $item->id) }}" class="btn-icon" title="Preview">
+                      ⊙
+                    </a>
+                    <a href="{{ route('utilization.excel', $item->id) }}" class="btn-icon excel" title="Download Excel">
+                      E
                     </a>
                   @endif
                 </div>

@@ -16,32 +16,36 @@ class ReportController extends Controller
         $myReportIds = $request->input('my_report_ids', []);
         $myBapIds = $request->cookie('my_baps');
         $myBapIds = $myBapIds ? explode(',', $myBapIds) : [];
-        
+        $myUtilizationIds = $request->cookie('my_utilization_reports');
+        $myUtilizationIds = $myUtilizationIds ? explode(',', $myUtilizationIds) : [];
+
         // Count reports
         $reportCount = !empty($myReportIds) ? Report::whereIn('id', $myReportIds)->count() : 0;
         $bapCount = !empty($myBapIds) ? Bap::whereIn('id', $myBapIds)->count() : 0;
-        $totalReports = $reportCount + $bapCount;
+        $utilizationCount = !empty($myUtilizationIds) ? \App\Models\UtilizationReport::whereIn('id', $myUtilizationIds)->count() : 0;
+        $totalReports = $reportCount + $bapCount + $utilizationCount;
         
-        if (empty($myReportIds)) {
-            $kondisiBaik = 0;
-            $kondisiProblem = 0;
-            $bulanIni = 0;
-        } else {
+        $kondisiBaik = 0;
+        $kondisiProblem = 0;
+        $bulanIni = 0;
+        if (!empty($myReportIds)) {
             $kondisiBaik = ReportItem::whereIn('report_id', $myReportIds)
                 ->where('kondisi', 'baik')->count();
-            
             $kondisiProblem = ReportItem::whereIn('report_id', $myReportIds)
                 ->where('kondisi', 'problem')->count();
-            
-            $bulanIni = Report::whereIn('id', $myReportIds)
+            $bulanIni += Report::whereIn('id', $myReportIds)
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->count();
         }
-        
-        // Add BAP count to bulanIni
         if (!empty($myBapIds)) {
             $bulanIni += Bap::whereIn('id', $myBapIds)
+                ->whereMonth('created_at', now()->month)
+                ->whereYear('created_at', now()->year)
+                ->count();
+        }
+        if (!empty($myUtilizationIds)) {
+            $bulanIni += \App\Models\UtilizationReport::whereIn('id', $myUtilizationIds)
                 ->whereMonth('created_at', now()->month)
                 ->whereYear('created_at', now()->year)
                 ->count();
@@ -52,13 +56,12 @@ class ReportController extends Controller
         $jenisLaporan = $request->input('jenis_laporan');
         $bulanFilter = $request->input('bulan');
         
-        // Combine Reports and BAPs for all items with filters
+        // Combine Reports, BAPs, and Utilization Reports for all items with filters
         $allItems = collect();
-        
+
         if (!empty($myReportIds)) {
             $reportsQuery = Report::whereIn('id', $myReportIds);
-            
-            // Apply search filter
+            // ...existing code...
             if ($search) {
                 $reportsQuery->where(function($q) use ($search) {
                     $q->where('nama_kegiatan', 'like', '%' . $search . '%')
@@ -66,13 +69,9 @@ class ReportController extends Controller
                       ->orWhere('lokasi_kegiatan', 'like', '%' . $search . '%');
                 });
             }
-            
-            // Apply month filter
             if ($bulanFilter) {
                 $reportsQuery->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanFilter]);
             }
-            
-            // Apply jenis filter - skip reports if filtering for BAP only
             if ($jenisLaporan === 'bap') {
                 // Skip reports
             } else {
@@ -90,24 +89,18 @@ class ReportController extends Controller
                 $allItems = $allItems->merge($reports);
             }
         }
-        
+
         if (!empty($myBapIds)) {
             $bapsQuery = Bap::whereIn('id', $myBapIds);
-            
-            // Apply search filter for BAP
             if ($search) {
                 $bapsQuery->where(function($q) use ($search) {
                     $q->where('nomor_bap', 'like', '%' . $search . '%')
                       ->orWhere('nomor_surat_permohonan', 'like', '%' . $search . '%');
                 });
             }
-            
-            // Apply month filter
             if ($bulanFilter) {
                 $bapsQuery->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanFilter]);
             }
-            
-            // Apply jenis filter - skip BAP if filtering for report only
             if ($jenisLaporan === 'report') {
                 // Skip BAP
             } else {
@@ -123,6 +116,32 @@ class ReportController extends Controller
                     ];
                 });
                 $allItems = $allItems->merge($baps);
+            }
+        }
+
+        if (!empty($myUtilizationIds)) {
+            $utilQuery = \App\Models\UtilizationReport::whereIn('id', $myUtilizationIds);
+            if ($search) {
+                $utilQuery->where('judul', 'like', '%' . $search . '%');
+            }
+            if ($bulanFilter) {
+                $utilQuery->whereRaw("DATE_FORMAT(created_at, '%Y-%m') = ?", [$bulanFilter]);
+            }
+            if ($jenisLaporan === 'report' || $jenisLaporan === 'bap') {
+                // Skip utilization jika filter report/bap saja
+            } else {
+                $utils = $utilQuery->get()->map(function($util) {
+                    return (object)[
+                        'id' => $util->id,
+                        'type' => 'utilization',
+                        'nama' => $util->judul ?? '-',
+                        'jenis_laporan' => 'Utilization Report',
+                        'jenis_kegiatan' => '-',
+                        'detail' => $util->periode_mulai->format('d M Y') . ' - ' . $util->periode_selesai->format('d M Y'),
+                        'created_at' => $util->created_at,
+                    ];
+                });
+                $allItems = $allItems->merge($utils);
             }
         }
         
