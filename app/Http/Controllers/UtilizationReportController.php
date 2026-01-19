@@ -44,7 +44,6 @@ class UtilizationReportController extends Controller
 
         $report = UtilizationReport::create($validated);
 
-        // Process sections
         if ($request->has('sections')) {
             foreach ($request->sections as $sectionIndex => $sectionData) {
                 $section = UtilizationSection::create([
@@ -54,34 +53,21 @@ class UtilizationReportController extends Controller
                     'urutan' => $sectionIndex,
                 ]);
 
-                // Process items in section
                 if (isset($sectionData['items'])) {
                     foreach ($sectionData['items'] as $itemIndex => $itemData) {
                         $gambarPath = null;
-                        
-                        // Handle image upload (support DataTransfer from JS)
                         $gambarInput = "sections.{$sectionIndex}.items.{$itemIndex}.gambar";
+                        
                         if ($request->hasFile($gambarInput)) {
                             $gambar = $request->file($gambarInput);
-                            if (is_array($gambar)) {
-                                // If somehow multiple files, ambil yang pertama
-                                $gambar = $gambar[0];
-                            }
+                            if (is_array($gambar)) { $gambar = $gambar[0]; }
                             $gambarPath = $gambar->store('utilization-graphs', 'public');
                         }
 
                         UtilizationItem::create([
                             'utilization_section_id' => $section->id,
                             'nama_interface' => $itemData['nama_interface'] ?? null,
-                            // label caption dari form
                             'label' => $itemData['label_caption'] ?? ($itemData['label'] ?? null),
-                            'inbound_current' => $itemData['inbound_current'] ?? null,
-                            'inbound_average' => $itemData['inbound_average'] ?? null,
-                            'inbound_maximum' => $itemData['inbound_maximum'] ?? null,
-                            'outbound_current' => $itemData['outbound_current'] ?? null,
-                            'outbound_average' => $itemData['outbound_average'] ?? null,
-                            'outbound_maximum' => $itemData['outbound_maximum'] ?? null,
-                            // label inbound/outbound dari form
                             'inbound_value' => $itemData['label_inbound'] ?? ($itemData['inbound_value'] ?? null),
                             'outbound_value' => $itemData['label_outbound'] ?? ($itemData['outbound_value'] ?? null),
                             'gambar_graph' => $gambarPath,
@@ -90,7 +76,6 @@ class UtilizationReportController extends Controller
                     }
                 }
 
-                // Process summaries
                 if (isset($sectionData['summaries'])) {
                     foreach ($sectionData['summaries'] as $sumIndex => $sumData) {
                         UtilizationSummary::create([
@@ -105,7 +90,6 @@ class UtilizationReportController extends Controller
             }
         }
 
-        // Cookie tracking
         $myReports = $request->cookie('my_utilization_reports', '');
         $reportIds = $myReports ? explode(',', $myReports) : [];
         $reportIds[] = $report->id;
@@ -130,126 +114,145 @@ class UtilizationReportController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Utilization Report');
 
-        // Set default column widths
-        $sheet->getDefaultColumnDimension()->setWidth(15);
-        $sheet->getColumnDimension('A')->setWidth(40);
-        $sheet->getColumnDimension('B')->setWidth(20);
-        $sheet->getColumnDimension('C')->setWidth(20);
-        $sheet->getColumnDimension('D')->setWidth(20);
-        $sheet->getColumnDimension('E')->setWidth(20);
-        $sheet->getColumnDimension('F')->setWidth(20);
-        $sheet->getColumnDimension('G')->setWidth(20);
-        $sheet->getColumnDimension('H')->setWidth(20);
+       
+        $sheet->getColumnDimension('A')->setWidth(25);
+        $sheet->getColumnDimension('B')->setWidth(18);
+        $sheet->getColumnDimension('C')->setWidth(10); 
+        $sheet->getColumnDimension('D')->setWidth(25);
+        $sheet->getColumnDimension('E')->setWidth(18);
+        
+        
+        foreach (range('F', 'Z') as $columnID) {
+            $sheet->getColumnDimension($columnID)->setWidth(15);
+        }
 
         $row = 1;
 
-        // Title
-        $sheet->setCellValue('D' . $row, $utilization->judul);
-        $sheet->mergeCells('D' . $row . ':F' . $row);
-        $sheet->getStyle('D' . $row . ':F' . $row)->getFont()->setBold(true)->setSize(16);
-        $sheet->getStyle('D' . $row . ':F' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+     
+        $sheet->setCellValue('A' . $row, strtoupper($utilization->judul));
+        $sheet->mergeCells('A' . $row . ':E' . $row); // Merge A sampai E sesuai lebar konten
+        $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(20);
+        $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $row++;
 
-        // Period
+        
         $periodeText = 'Periode: ' . $utilization->periode_mulai->translatedFormat('d F Y') . ' - ' . $utilization->periode_selesai->translatedFormat('d F Y');
         $sheet->setCellValue('A' . $row, $periodeText);
-        $sheet->mergeCells('A' . $row . ':H' . $row);
-        $sheet->getStyle('A' . $row . ':H' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_LEFT);
+        $sheet->mergeCells('A' . $row . ':E' . $row);
+        $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $row += 2;
 
         foreach ($utilization->sections as $section) {
-            // Section header (warna hanya sepanjang teks)
+        
             $sheet->setCellValue('A' . $row, $section->nama_section);
+            $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(14);
             $sheet->getStyle('A' . $row)->getFill()
                 ->setFillType(Fill::FILL_SOLID)
                 ->getStartColor()->setARGB(str_replace('#', '', $section->warna_header));
-            $sheet->getStyle('A' . $row)->getFont()->setBold(true);
-            $row++;
+            $row += 2; 
+            $items = $section->items->chunk(2); 
+            
+            foreach ($items as $chunk) {
+                $startRowThisChunk = $row;
+                $maxRowReached = $row;
 
-            // Items
-            foreach ($section->items as $item) {
-                // Add graph image first, bigger size
-                if ($item->gambar_graph && Storage::disk('public')->exists($item->gambar_graph)) {
-                    $imagePath = Storage::disk('public')->path($item->gambar_graph);
-                    $drawing = new Drawing();
-                    $drawing->setName('Graph');
-                    $drawing->setDescription('Traffic Graph');
-                    $drawing->setPath($imagePath);
-                    $drawing->setHeight(220); // Perbesar gambar
-                    $drawing->setCoordinates('A' . $row);
-                    $drawing->setWorksheet($sheet);
-                    $row += 14; // Space for bigger image
+                foreach ($chunk as $index => $item) {
+                    $isLeft = ($index % 2 == 0);
+                    $colLabel = $isLeft ? 'A' : 'D'; // Loncat kolom C sebagai spacer
+                    $colValue = $isLeft ? 'B' : 'E';
+
+                    // 1. Gambar
+                    if ($item->gambar_graph && Storage::disk('public')->exists($item->gambar_graph)) {
+                        $imagePath = Storage::disk('public')->path($item->gambar_graph);
+                        $drawing = new Drawing();
+                        $drawing->setPath($imagePath);
+                        $drawing->setHeight(160); // Ukuran gambar sedikit lebih besar
+                        $drawing->setCoordinates($colLabel . $startRowThisChunk);
+                        $drawing->setWorksheet($sheet);
+                        
+                        $labelRow = $startRowThisChunk + 10; // Row label di bawah foto
+                    } else {
+                        $labelRow = $startRowThisChunk;
+                    }
+
+                    // 2. Label (IPTR / PGAS / Nama Interface)
+                    $sheet->setCellValue($colLabel . $labelRow, $item->label ?? '-');
+                    $sheet->getStyle($colLabel . $labelRow)->getFont()->setBold(true)->setSize(12);
+
+                    // Fungsi pembantu untuk mencegah "Mbps Mbps"
+                    $formatMbps = function($val) {
+                        if (!$val) return '0 Mbps';
+                        return str_contains(strtolower($val), 'mbps') ? $val : $val . ' Mbps';
+                    };
+
+                    // 3. Data Inbound/Outbound
+                    $sheet->setCellValue($colLabel . ($labelRow + 1), 'INBOUND');
+                    $sheet->setCellValue($colValue . ($labelRow + 1), $formatMbps($item->inbound_value));
+                    
+                    $sheet->setCellValue($colLabel . ($labelRow + 2), 'OUTBOUND');
+                    $sheet->setCellValue($colValue . ($labelRow + 2), $formatMbps($item->outbound_value));
+
+                    if (($labelRow + 4) > $maxRowReached) {
+                        $maxRowReached = $labelRow + 4;
+                    }
                 }
-                // Label, inbound, outbound di bawah gambar
-                if ($item->label || $item->inbound_value || $item->outbound_value) {
-                    $sheet->setCellValue('A' . $row, $item->label ?? '-');
-                    $sheet->getStyle('A' . $row)->getFont()->setBold(true);
-                    $row++;
-                    $sheet->setCellValue('A' . $row, 'INBOUND');
-                    $sheet->setCellValue('B' . $row, $item->inbound_value ?? '-');
-                    $row++;
-                    $sheet->setCellValue('A' . $row, 'OUTBOUND');
-                    $sheet->setCellValue('B' . $row, $item->outbound_value ?? '-');
-                    $row++;
-                }
+                $row = $maxRowReached + 1; // Jarak antar baris foto
             }
 
-            // Summary table
+            // --- TABEL SUMMARY (KOMPAK KE SAMPING) ---
             if ($section->summaries->count() > 0) {
                 $row++;
-                $colIndex = 0;
-                $colCount = count($section->summaries);
-                // Header row (kategori, merge 2 kolom per kategori)
+                
+                // Header Summary
+                $currentColNum = ord('A');
                 foreach ($section->summaries as $summary) {
-                    $col = chr(ord('A') + $colIndex * 2);
-                    $col2 = chr(ord('A') + $colIndex * 2 + 1);
-                    $sheet->setCellValue($col . $row, $summary->kategori);
-                    $sheet->mergeCells($col . $row . ':' . $col2 . $row);
-                    $sheet->getStyle($col . $row . ':' . $col2 . $row)->getFill()
-                        ->setFillType(Fill::FILL_SOLID)
-                        ->getStartColor()->setARGB('F4A460');
-                    $sheet->getStyle($col . $row . ':' . $col2 . $row)->getFont()->setBold(true);
-                    $sheet->getStyle($col . $row . ':' . $col2 . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $colIndex++;
+                    $c1 = chr($currentColNum);
+                    $c2 = chr($currentColNum + 1);
+                    
+                    $sheet->setCellValue($c1 . $row, $summary->kategori);
+                    $sheet->mergeCells($c1 . $row . ':' . $c2 . $row);
+                    
+                    $style = $sheet->getStyle($c1 . $row . ':' . $c2 . $row);
+                    $style->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('F4A460');
+                    $style->getFont()->setBold(true);
+                    $style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+                    $style->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                    
+                    $currentColNum += 2;
                 }
-                // Border header
-                $sheet->getStyle('A' . $row . ':' . chr(ord('A') + $colCount * 2 - 1) . $row)
-                    ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                
                 $row++;
-                // INBOUND row: INBOUND, angka, INBOUND, angka, ...
-                $colIndex = 0;
+                
+                // Baris INBOUND
+                $currentColNum = ord('A');
                 foreach ($section->summaries as $summary) {
-                    $col = chr(ord('A') + $colIndex * 2);
-                    $col2 = chr(ord('A') + $colIndex * 2 + 1);
-                    $sheet->setCellValue($col . $row, 'INBOUND');
-                    $sheet->setCellValue($col2 . $row, $summary->inbound_value);
-                    $sheet->getStyle($col . $row . ':' . $col2 . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $colIndex++;
+                    $c1 = chr($currentColNum);
+                    $c2 = chr($currentColNum + 1);
+                    $sheet->setCellValue($c1 . $row, 'INBOUND');
+                    $sheet->setCellValue($c2 . $row, $summary->inbound_value);
+                    $sheet->getStyle($c1 . $row . ':' . $c2 . $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                    $currentColNum += 2;
                 }
-                $sheet->getStyle('A' . $row . ':' . chr(ord('A') + $colCount * 2 - 1) . $row)
-                    ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                
                 $row++;
-                // OUTBOUND row: OUTBOUND, angka, OUTBOUND, angka, ...
-                $colIndex = 0;
+
+                // Baris OUTBOUND
+                $currentColNum = ord('A');
                 foreach ($section->summaries as $summary) {
-                    $col = chr(ord('A') + $colIndex * 2);
-                    $col2 = chr(ord('A') + $colIndex * 2 + 1);
-                    $sheet->setCellValue($col . $row, 'OUTBOUND');
-                    $sheet->setCellValue($col2 . $row, $summary->outbound_value);
-                    $sheet->getStyle($col . $row . ':' . $col2 . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $colIndex++;
+                    $c1 = chr($currentColNum);
+                    $c2 = chr($currentColNum + 1);
+                    $sheet->setCellValue($c1 . $row, 'OUTBOUND');
+                    $sheet->setCellValue($c2 . $row, $summary->outbound_value);
+                    $sheet->getStyle($c1 . $row . ':' . $c2 . $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+                    $currentColNum += 2;
                 }
-                $sheet->getStyle('A' . $row . ':' . chr(ord('A') + $colCount * 2 - 1) . $row)
-                    ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-                $row++;
             }
 
-            $row += 2; // Space between sections
+            $row += 3; // Jeda antar section
         }
 
-        // Output
-        $filename = 'Utilization_Report_' . $utilization->id . '_' . date('Ymd_His') . '.xlsx';
-        
+        // Export as Excel
+        $filename = 'Utilization_Report_' . date('Ymd_His') . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $filename . '"');
         header('Cache-Control: max-age=0');
@@ -259,3 +262,4 @@ class UtilizationReportController extends Controller
         exit;
     }
 }
+

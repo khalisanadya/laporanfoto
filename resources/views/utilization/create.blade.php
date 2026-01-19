@@ -223,11 +223,19 @@
     display: none;
   }
 
+  /* Preview Container */
+  .upload-preview {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
   .upload-preview img {
     max-width: 100%;
-    max-height: 150px;
+    max-height: 250px;
     border-radius: 8px;
-    margin-top: 8px;
+    margin-bottom: 12px; /* Memberi jarak ke tombol di bawahnya */
   }
 
   /* Summary Table */
@@ -276,12 +284,13 @@
   }
 
   .btn-remove {
-    padding: 6px 10px;
+    padding: 6px 14px;
     background: #fef2f2;
     color: #dc2626;
     border: 1px solid #fecaca;
     border-radius: 6px;
-    font-size: 11px;
+    font-size: 12px;
+    font-weight: 600;
     cursor: pointer;
     transition: all .2s ease;
   }
@@ -371,7 +380,6 @@ let sectionIndex = 0;
 let itemCounters = {};
 let summaryCounters = {};
 
-// Tambahkan global variabel untuk track item terakhir
 let lastGraphSecIdx = null;
 let lastGraphItemIdx = null;
 
@@ -431,13 +439,9 @@ function addItem(secIdx) {
         </div>
       </div>
 
-
       <div class="form-group">
         <label class="form-label">Upload Graph</label>
         <div class="upload-area" onclick="document.getElementById('graph-${secIdx}-${itemIdx}').click()"
-             ondrop="handleDrop(event, ${secIdx}, ${itemIdx})"
-             ondragover="handleDragOver(event)"
-             ondragleave="handleDragLeave(event)"
              id="upload-area-${secIdx}-${itemIdx}">
           <input type="file" id="graph-${secIdx}-${itemIdx}" name="sections[${secIdx}][items][${itemIdx}][gambar]" accept="image/*" onchange="previewGraph(this, ${secIdx}, ${itemIdx})">
           <div class="upload-preview" id="graph-preview-${secIdx}-${itemIdx}">
@@ -487,20 +491,28 @@ function removeSummary(secIdx, sumIdx) {
   document.getElementById(`summary-${secIdx}-${sumIdx}`)?.remove();
 }
 
-// Set lastGraphSecIdx & lastGraphItemIdx saat upload/paste/drag
 function setLastGraph(secIdx, itemIdx) {
   lastGraphSecIdx = secIdx;
   lastGraphItemIdx = itemIdx;
 }
 
-// Patch previewGraph dan handlePaste agar set lastGraph
+// Fungsi pembantu untuk membuat preview (Digunakan oleh upload dan paste)
+function createPreviewHTML(src, secIdx, itemIdx) {
+  return `
+    <div style="display: flex; flex-direction: column; align-items: center; width: 100%;">
+      <img src="${src}" alt="Graph" style="max-width: 100%; max-height: 250px; border-radius: 8px;">
+      <button type='button' class='btn-remove' onclick='removeGraphImage(${secIdx},${itemIdx}, event)'>Hapus Foto</button>
+    </div>
+  `;
+}
+
 function previewGraph(input, secIdx, itemIdx) {
   setLastGraph(secIdx, itemIdx);
   const preview = document.getElementById(`graph-preview-${secIdx}-${itemIdx}`);
   if (input.files && input.files[0]) {
     const reader = new FileReader();
     reader.onload = function(e) {
-      preview.innerHTML = `<img src="${e.target.result}" alt="Graph"><button type='button' class='btn-remove' style='margin-left:8px;margin-top:8px;' onclick='removeGraphImage(${secIdx},${itemIdx})'>Hapus Foto</button>`;
+      preview.innerHTML = createPreviewHTML(e.target.result, secIdx, itemIdx);
       document.getElementById(`paste-area-${secIdx}-${itemIdx}`).textContent = 'Gambar diupload';
     };
     reader.readAsDataURL(input.files[0]);
@@ -517,7 +529,7 @@ function handlePaste(event, secIdx, itemIdx) {
       const reader = new FileReader();
       reader.onload = function(e) {
         const preview = document.getElementById(`graph-preview-${secIdx}-${itemIdx}`);
-        preview.innerHTML = `<img src="${e.target.result}" alt="Graph"><button type='button' class='btn-remove' style='margin-left:8px;margin-top:8px;' onclick='removeGraphImage(${secIdx},${itemIdx})'>Hapus Foto</button>`;
+        preview.innerHTML = createPreviewHTML(e.target.result, secIdx, itemIdx);
         document.getElementById(`paste-area-${secIdx}-${itemIdx}`).textContent = 'Screenshot di-paste!';
 
         const file = new File([blob], `screenshot-${Date.now()}.png`, { type: 'image/png' });
@@ -531,21 +543,21 @@ function handlePaste(event, secIdx, itemIdx) {
   }
 }
 
-// Global paste handler: paste image ke graph terakhir
-// (tanpa harus klik area kuning)
 document.addEventListener('paste', function(event) {
   if (lastGraphSecIdx !== null && lastGraphItemIdx !== null) {
-    handlePaste(event, lastGraphSecIdx, lastGraphItemIdx);
+    // Pastikan kita tidak paste jika sedang fokus di input teks lain
+    if(event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+        handlePaste(event, lastGraphSecIdx, lastGraphItemIdx);
+    }
   }
 }, true);
 
-function removeGraphImage(secIdx, itemIdx) {
+function removeGraphImage(secIdx, itemIdx, event) {
+  if (event) event.stopPropagation(); // Mencegah trigger klik pada upload-area
   const preview = document.getElementById(`graph-preview-${secIdx}-${itemIdx}`);
   preview.innerHTML = `<span style='color: var(--muted); font-size: 13px;'>Klik untuk upload atau drag & drop</span>`;
   document.getElementById(`graph-${secIdx}-${itemIdx}`).value = '';
   document.getElementById(`paste-area-${secIdx}-${itemIdx}`).textContent = 'Ctrl+V untuk paste screenshot';
 }
-
-// Tambahkan tombol hapus gambar
 </script>
 @endsection
