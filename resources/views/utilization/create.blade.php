@@ -545,7 +545,7 @@ function handlePaste(event, secIdx, itemIdx) {
 
 document.addEventListener('paste', function(event) {
   if (lastGraphSecIdx !== null && lastGraphItemIdx !== null) {
-    // Pastikan kita tidak paste jika sedang fokus di input teks lain
+   
     if(event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
         handlePaste(event, lastGraphSecIdx, lastGraphItemIdx);
     }
@@ -553,7 +553,7 @@ document.addEventListener('paste', function(event) {
 }, true);
 
 function removeGraphImage(secIdx, itemIdx, event) {
-  if (event) event.stopPropagation(); // Mencegah trigger klik pada upload-area
+  if (event) event.stopPropagation(); 
   const preview = document.getElementById(`graph-preview-${secIdx}-${itemIdx}`);
   preview.innerHTML = `<span style='color: var(--muted); font-size: 13px;'>Klik untuk upload atau drag & drop</span>`;
   document.getElementById(`graph-${secIdx}-${itemIdx}`).value = '';
