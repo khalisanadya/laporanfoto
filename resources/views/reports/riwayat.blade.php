@@ -153,6 +153,16 @@
     border-color: #2563eb;
   }
 
+  .btn-icon.excel{
+    color: #16a34a;
+    border-color: #bbf7d0;
+  }
+
+  .btn-icon.excel:hover{
+    background: #f0fdf4;
+    border-color: #16a34a;
+  }
+
   .empty-state{
     text-align: center;
     padding: 60px 20px;

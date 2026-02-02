@@ -115,7 +115,7 @@ class UtilizationReportController extends Controller
         $sheet->setTitle('Utilization Report');
 
        
-        $sheet->getColumnDimension('A')->setWidth(25);
+        $sheet->getColumnDimension('A')->setWidth(15);
         $sheet->getColumnDimension('B')->setWidth(18);
         $sheet->getColumnDimension('C')->setWidth(10); 
         $sheet->getColumnDimension('D')->setWidth(25);
@@ -130,7 +130,7 @@ class UtilizationReportController extends Controller
 
      
         $sheet->setCellValue('A' . $row, strtoupper($utilization->judul));
-        $sheet->mergeCells('A' . $row . ':E' . $row); // Merge A sampai E sesuai lebar konten
+        $sheet->mergeCells('A' . $row . ':E' . $row); 
         $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(20);
         $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $row++;
@@ -158,7 +158,7 @@ class UtilizationReportController extends Controller
 
                 foreach ($chunk as $index => $item) {
                     $isLeft = ($index % 2 == 0);
-                    $colLabel = $isLeft ? 'A' : 'D'; // Loncat kolom C sebagai spacer
+                    $colLabel = $isLeft ? 'A' : 'D'; 
                     $colValue = $isLeft ? 'B' : 'E';
 
                     // 1. Gambar
@@ -166,20 +166,20 @@ class UtilizationReportController extends Controller
                         $imagePath = Storage::disk('public')->path($item->gambar_graph);
                         $drawing = new Drawing();
                         $drawing->setPath($imagePath);
-                        $drawing->setHeight(160); // Ukuran gambar sedikit lebih besar
+                        $drawing->setHeight(160); 
                         $drawing->setCoordinates($colLabel . $startRowThisChunk);
                         $drawing->setWorksheet($sheet);
                         
-                        $labelRow = $startRowThisChunk + 10; // Row label di bawah foto
+                        $labelRow = $startRowThisChunk + 10; 
                     } else {
                         $labelRow = $startRowThisChunk;
                     }
 
-                    // 2. Label (IPTR / PGAS / Nama Interface)
+                    // 2. Label 
                     $sheet->setCellValue($colLabel . $labelRow, $item->label ?? '-');
                     $sheet->getStyle($colLabel . $labelRow)->getFont()->setBold(true)->setSize(12);
 
-                    // Fungsi pembantu untuk mencegah "Mbps Mbps"
+                    
                     $formatMbps = function($val) {
                         if (!$val) return '0 Mbps';
                         return str_contains(strtolower($val), 'mbps') ? $val : $val . ' Mbps';
@@ -196,14 +196,14 @@ class UtilizationReportController extends Controller
                         $maxRowReached = $labelRow + 4;
                     }
                 }
-                $row = $maxRowReached + 1; // Jarak antar baris foto
+                $row = $maxRowReached + 1; 
             }
 
-            // --- TABEL SUMMARY (KOMPAK KE SAMPING) ---
+           
             if ($section->summaries->count() > 0) {
                 $row++;
                 
-                // Header Summary
+            
                 $currentColNum = ord('A');
                 foreach ($section->summaries as $summary) {
                     $c1 = chr($currentColNum);
@@ -223,7 +223,7 @@ class UtilizationReportController extends Controller
                 
                 $row++;
                 
-                // Baris INBOUND
+                
                 $currentColNum = ord('A');
                 foreach ($section->summaries as $summary) {
                     $c1 = chr($currentColNum);
@@ -236,7 +236,7 @@ class UtilizationReportController extends Controller
                 
                 $row++;
 
-                // Baris OUTBOUND
+                
                 $currentColNum = ord('A');
                 foreach ($section->summaries as $summary) {
                     $c1 = chr($currentColNum);
@@ -248,10 +248,10 @@ class UtilizationReportController extends Controller
                 }
             }
 
-            $row += 3; // Jeda antar section
+            $row += 3; 
         }
 
-        // Export as Excel
+       
         $filename = 'Utilization_Report_' . date('Ymd_His') . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $filename . '"');
