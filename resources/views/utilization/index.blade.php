@@ -126,10 +126,10 @@
               <td>
                 <div class="action-buttons">
                   <a href="{{ route('utilization.show', $report) }}" class="btn-icon" title="Preview">
-                    ◎
+                    ⊙
                   </a>
                   <a href="{{ route('utilization.excel', $report) }}" class="btn-icon excel" title="Download Excel">
-                    ↓
+                    E
                   </a>
                 </div>
               </td>

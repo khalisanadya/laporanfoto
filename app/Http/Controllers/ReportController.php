@@ -380,24 +380,11 @@ class ReportController extends Controller
             'marginRight' => 1200,
         ]);
 
-
-        // Header with logo and title
-        $headerTable = $section->addTable(['borderSize' => 0, 'alignment' => \PhpOffice\PhpWord\SimpleType\JcTable::CENTER]);
-        $headerTable->addRow(900);
-        // Logo cell
-        $logoPath = public_path('images/logo-gasnet.png');
-        $cellLogo = $headerTable->addCell(1800, ['bgColor' => 'FFFFFF', 'valign' => 'center']);
-        if (file_exists($logoPath)) {
-            $cellLogo->addImage($logoPath, [
-                'width' => 90,
-                'height' => 90,
-                'alignment' => 'center',
-                'wrappingStyle' => 'inline',
-            ]);
-        }
-        // Title cell
-        $cellTitle = $headerTable->addCell(7200, ['bgColor' => '0369a1', 'valign' => 'center']);
-        $cellTitle->addText('LAPORAN KEGIATAN', ['bold' => true, 'size' => 20, 'color' => 'FFFFFF'], ['alignment' => 'center', 'spaceBefore' => 150, 'spaceAfter' => 150]);
+        // Header with blue background
+        $headerTable = $section->addTable(['borderSize' => 0]);
+        $headerTable->addRow(800);
+        $headerCell = $headerTable->addCell(9000, ['bgColor' => '0369a1', 'valign' => 'center']);
+        $headerCell->addText('LAPORAN KEGIATAN', ['bold' => true, 'size' => 20, 'color' => 'FFFFFF'], ['alignment' => 'center', 'spaceBefore' => 150, 'spaceAfter' => 150]);
 
         $section->addTextBreak(1);
 

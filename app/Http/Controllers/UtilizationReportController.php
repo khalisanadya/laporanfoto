@@ -114,28 +114,23 @@ class UtilizationReportController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Utilization Report');
 
-       
-        $sheet->getColumnDimension('A')->setWidth(15);
-        $sheet->getColumnDimension('B')->setWidth(18);
-        $sheet->getColumnDimension('C')->setWidth(10); 
-        $sheet->getColumnDimension('D')->setWidth(25);
-        $sheet->getColumnDimension('E')->setWidth(18);
-        
-        
-        foreach (range('F', 'Z') as $columnID) {
-            $sheet->getColumnDimension($columnID)->setWidth(15);
-        }
+        // --- KONFIGURASI KOLOM ---
+        $sheet->getColumnDimension('A')->setWidth(25); // Label Item 1
+        $sheet->getColumnDimension('B')->setWidth(20); // Value Item 1
+        $sheet->getColumnDimension('C')->setWidth(5);  // Spacer (Jarak tengah)
+        $sheet->getColumnDimension('D')->setWidth(25); // Label Item 2
+        $sheet->getColumnDimension('E')->setWidth(20); // Value Item 2
 
         $row = 1;
 
-     
+        // --- HEADER JUDUL ---
         $sheet->setCellValue('A' . $row, strtoupper($utilization->judul));
-        $sheet->mergeCells('A' . $row . ':E' . $row); 
-        $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(20);
+        $sheet->mergeCells('A' . $row . ':E' . $row);
+        $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(18);
         $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $row++;
 
-        
+        // --- PERIODE ---
         $periodeText = 'Periode: ' . $utilization->periode_mulai->translatedFormat('d F Y') . ' - ' . $utilization->periode_selesai->translatedFormat('d F Y');
         $sheet->setCellValue('A' . $row, $periodeText);
         $sheet->mergeCells('A' . $row . ':E' . $row);
@@ -143,68 +138,87 @@ class UtilizationReportController extends Controller
         $row += 2;
 
         foreach ($utilization->sections as $section) {
-        
+            // --- NAMA SECTION ---
             $sheet->setCellValue('A' . $row, $section->nama_section);
-            $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(14);
+            $sheet->mergeCells('A' . $row . ':E' . $row);
+            $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(14)->getColor()->setARGB('FFFFFF');
             $sheet->getStyle('A' . $row)->getFill()
                 ->setFillType(Fill::FILL_SOLID)
                 ->getStartColor()->setARGB(str_replace('#', '', $section->warna_header));
-            $row += 2; 
-            $items = $section->items->chunk(2); 
-            
+            $row += 2;
+
+            // --- ITEMS (DIBAGI 2 KOLOM) ---
+            $items = $section->items->chunk(2);
             foreach ($items as $chunk) {
-                $startRowThisChunk = $row;
-                $maxRowReached = $row;
+                // 1. Tentukan Baris Untuk Gambar
+                $imageRow = $row;
+                $hasImage = false;
 
                 foreach ($chunk as $index => $item) {
                     $isLeft = ($index % 2 == 0);
-                    $colLabel = $isLeft ? 'A' : 'D'; 
-                    $colValue = $isLeft ? 'B' : 'E';
+                    $colLabel = $isLeft ? 'A' : 'D';
 
-                    // 1. Gambar
                     if ($item->gambar_graph && Storage::disk('public')->exists($item->gambar_graph)) {
+                        $hasImage = true;
                         $imagePath = Storage::disk('public')->path($item->gambar_graph);
+                        
                         $drawing = new Drawing();
                         $drawing->setPath($imagePath);
-                        $drawing->setHeight(160); 
-                        $drawing->setCoordinates($colLabel . $startRowThisChunk);
+                        $drawing->setHeight(150); // Tinggi gambar dalam pixel
+                        $drawing->setCoordinates($colLabel . $imageRow);
+                        $drawing->setOffsetX(5);
+                        $drawing->setOffsetY(5);
                         $drawing->setWorksheet($sheet);
-                        
-                        $labelRow = $startRowThisChunk + 10; 
                     } else {
-                        $labelRow = $startRowThisChunk;
+                        $sheet->setCellValue($colLabel . $imageRow, '[No Image]');
                     }
+                }
 
-                    // 2. Label 
-                    $sheet->setCellValue($colLabel . $labelRow, $item->label ?? '-');
-                    $sheet->getStyle($colLabel . $labelRow)->getFont()->setBold(true)->setSize(12);
+                // Jika ada gambar, paksa baris tersebut jadi tinggi (150px approx 120pt)
+                if ($hasImage) {
+                    $sheet->getRowDimension($imageRow)->setRowHeight(125);
+                }
 
-                    
+                $row++; // Turun ke baris setelah gambar
+
+                // 2. Tulis Label dan Data (Inbound/Outbound)
+                $dataStartRow = $row;
+                foreach ($chunk as $index => $item) {
+                    $isLeft = ($index % 2 == 0);
+                    $colLabel = $isLeft ? 'A' : 'D';
+                    $colValue = $isLeft ? 'B' : 'E';
+
+                    // Nama/Label Interface
+                    $sheet->setCellValue($colLabel . $dataStartRow, $item->label ?? '-');
+                    $sheet->mergeCells($colLabel . $dataStartRow . ':' . $colValue . $dataStartRow);
+                    $sheet->getStyle($colLabel . $dataStartRow)->getFont()->setBold(true);
+
                     $formatMbps = function($val) {
                         if (!$val) return '0 Mbps';
                         return str_contains(strtolower($val), 'mbps') ? $val : $val . ' Mbps';
                     };
 
-                    // 3. Data Inbound/Outbound
-                    $sheet->setCellValue($colLabel . ($labelRow + 1), 'INBOUND');
-                    $sheet->setCellValue($colValue . ($labelRow + 1), $formatMbps($item->inbound_value));
+                    // Inbound
+                    $sheet->setCellValue($colLabel . ($dataStartRow + 1), 'INBOUND');
+                    $sheet->setCellValue($colValue . ($dataStartRow + 1), $formatMbps($item->inbound_value));
                     
-                    $sheet->setCellValue($colLabel . ($labelRow + 2), 'OUTBOUND');
-                    $sheet->setCellValue($colValue . ($labelRow + 2), $formatMbps($item->outbound_value));
+                    // Outbound
+                    $sheet->setCellValue($colLabel . ($dataStartRow + 2), 'OUTBOUND');
+                    $sheet->setCellValue($colValue . ($dataStartRow + 2), $formatMbps($item->outbound_value));
 
-                    if (($labelRow + 4) > $maxRowReached) {
-                        $maxRowReached = $labelRow + 4;
-                    }
+                    // Style sedikit
+                    $sheet->getStyle($colLabel . ($dataStartRow + 1) . ':' . $colLabel . ($dataStartRow + 2))->getFont()->setItalic(true);
                 }
-                $row = $maxRowReached + 1; 
+
+                $row = $dataStartRow + 4; // Beri jarak antar baris item
             }
 
-           
+            // --- SUMMARIES ---
             if ($section->summaries->count() > 0) {
                 $row++;
-                
-            
                 $currentColNum = ord('A');
+
+                // Header Summary
                 foreach ($section->summaries as $summary) {
                     $c1 = chr($currentColNum);
                     $c2 = chr($currentColNum + 1);
@@ -212,18 +226,17 @@ class UtilizationReportController extends Controller
                     $sheet->setCellValue($c1 . $row, $summary->kategori);
                     $sheet->mergeCells($c1 . $row . ':' . $c2 . $row);
                     
-                    $style = $sheet->getStyle($c1 . $row . ':' . $c2 . $row);
-                    $style->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setARGB('F4A460');
-                    $style->getFont()->setBold(true);
-                    $style->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-                    $style->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-                    
-                    $currentColNum += 2;
+                    $sheet->getStyle($c1 . $row . ':' . $c2 . $row)->applyFromArray([
+                        'font' => ['bold' => true],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                        'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'F4A460']],
+                        'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
+                    ]);
+                    $currentColNum += 3; // Beri jarak 1 kolom kosong antar tabel summary
                 }
-                
+
+                // Inbound Row
                 $row++;
-                
-                
                 $currentColNum = ord('A');
                 foreach ($section->summaries as $summary) {
                     $c1 = chr($currentColNum);
@@ -231,12 +244,11 @@ class UtilizationReportController extends Controller
                     $sheet->setCellValue($c1 . $row, 'INBOUND');
                     $sheet->setCellValue($c2 . $row, $summary->inbound_value);
                     $sheet->getStyle($c1 . $row . ':' . $c2 . $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-                    $currentColNum += 2;
+                    $currentColNum += 3;
                 }
-                
-                $row++;
 
-                
+                // Outbound Row
+                $row++;
                 $currentColNum = ord('A');
                 foreach ($section->summaries as $summary) {
                     $c1 = chr($currentColNum);
@@ -244,14 +256,13 @@ class UtilizationReportController extends Controller
                     $sheet->setCellValue($c1 . $row, 'OUTBOUND');
                     $sheet->setCellValue($c2 . $row, $summary->outbound_value);
                     $sheet->getStyle($c1 . $row . ':' . $c2 . $row)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
-                    $currentColNum += 2;
+                    $currentColNum += 3;
                 }
             }
 
-            $row += 3; 
+            $row += 3; // Jarak antar section
         }
 
-       
         $filename = 'Utilization_Report_' . date('Ymd_His') . '.xlsx';
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="' . $filename . '"');
@@ -262,4 +273,3 @@ class UtilizationReportController extends Controller
         exit;
     }
 }
-
