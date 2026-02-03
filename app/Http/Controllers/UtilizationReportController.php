@@ -114,12 +114,18 @@ class UtilizationReportController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Utilization Report');
 
-        // --- PENGATURAN LEBAR KOLOM (TIDAK BERUBAH) ---
-        $sheet->getColumnDimension('A')->setWidth(35); 
-        $sheet->getColumnDimension('B')->setWidth(20); 
-        $sheet->getColumnDimension('C')->setWidth(20); 
-        $sheet->getColumnDimension('D')->setWidth(35); 
-        $sheet->getColumnDimension('E')->setWidth(20);
+        // --- PENGATURAN LEBAR KOLOM (FIX: DISERAGAMKAN AGAR TABEL RAPI) ---
+        // Kita gunakan lebar yang sama untuk kolom label (A, C, E, G...) dan kolom nilai (B, D, F, H...)
+        for ($i = 1; $i <= 15; $i++) {
+            $colLetter = $this->getColLetter($i);
+            if ($i % 2 != 0) {
+                $sheet->getColumnDimension($colLetter)->setWidth(25); // Kolom Label
+            } else {
+                $sheet->getColumnDimension($colLetter)->setWidth(18); // Kolom Nilai
+            }
+        }
+        // Khusus Kolom C tetap diberikan lebar sedikit berbeda jika diperlukan, 
+        // tapi di sini disamakan (25) agar grid summary simetris.
 
         $row = 1;
 
@@ -147,6 +153,7 @@ class UtilizationReportController extends Controller
 
                 foreach ($chunk as $index => $item) {
                     $isLeft = ($index % 2 == 0);
+                    // Gunakan Kolom A untuk kiri, Kolom D untuk kanan (sesuai request foto bagus)
                     $col = $isLeft ? 'A' : 'D';
 
                     if ($item->gambar_graph && Storage::disk('public')->exists($item->gambar_graph)) {
@@ -187,43 +194,45 @@ class UtilizationReportController extends Controller
                 $row += 5; 
             }
 
-            // --- SUMMARY SECTION (REVISI: DISATUKAN KAYA PREVIEW) ---
+            // --- SUMMARY SECTION (REVISI: UKURAN SERAGAM & TIDAK TERPOTONG) ---
             if ($section->summaries->count() > 0) {
                 $row++;
                 $headerRow = $row;
-                $startColIdx = 1; // Mulai dari Kolom A
+                $startColIdx = 1; 
 
                 foreach ($section->summaries as $summary) {
                     $c1 = $this->getColLetter($startColIdx);
                     $c2 = $this->getColLetter($startColIdx + 1);
 
-                    // Header Tabel (Background Orange)
+                    // Header Tabel Summary
                     $sheet->setCellValue($c1 . $headerRow, $summary->kategori);
                     $sheet->mergeCells($c1 . $headerRow . ':' . $c2 . $headerRow);
                     $sheet->getStyle($c1 . $headerRow . ':' . $c2 . $headerRow)->applyFromArray([
                         'font' => ['bold' => true],
-                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'F4A460']],
                         'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
                     ]);
 
                     // Baris INBOUND
-                    $sheet->setCellValue($c1 . ($headerRow + 1), 'INBOUND');
+                    $sheet->setCellValue($c1 . ($headerRow + 1), '  INBOUND');
                     $sheet->setCellValue($c2 . ($headerRow + 1), $summary->inbound_value);
                     $sheet->getStyle($c1 . ($headerRow + 1) . ':' . $c2 . ($headerRow + 1))->applyFromArray([
-                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                        'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
                         'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
                     ]);
+                    $sheet->getStyle($c2 . ($headerRow + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
                     // Baris OUTBOUND
-                    $sheet->setCellValue($c1 . ($headerRow + 2), 'OUTBOUND');
+                    $sheet->setCellValue($c1 . ($headerRow + 2), '  OUTBOUND');
                     $sheet->setCellValue($c2 . ($headerRow + 2), $summary->outbound_value);
                     $sheet->getStyle($c1 . ($headerRow + 2) . ':' . $c2 . ($headerRow + 2))->applyFromArray([
-                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
+                        'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
                         'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
                     ]);
+                    $sheet->getStyle($c2 . ($headerRow + 2))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                    // Loncat 2 kolom saja (tanpa spasi) agar tabel menyatu
+                    // Pindah ke kolom berikutnya tanpa loncat (startColIdx += 2) agar tabel menyatu
                     $startColIdx += 2; 
                 }
                 $row += 4;
