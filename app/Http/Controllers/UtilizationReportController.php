@@ -114,18 +114,15 @@ class UtilizationReportController extends Controller
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Utilization Report');
 
-        // --- PENGATURAN LEBAR KOLOM (FIX: DISERAGAMKAN AGAR TABEL RAPI) ---
-        // Kita gunakan lebar yang sama untuk kolom label (A, C, E, G...) dan kolom nilai (B, D, F, H...)
+        // --- PENGATURAN LEBAR KOLOM SERAGAM (UNTUK SUMMARY & JARAK FOTO) ---
         for ($i = 1; $i <= 15; $i++) {
             $colLetter = $this->getColLetter($i);
             if ($i % 2 != 0) {
-                $sheet->getColumnDimension($colLetter)->setWidth(25); // Kolom Label
+                $sheet->getColumnDimension($colLetter)->setWidth(28); // Kolom Label (A, C, E...)
             } else {
-                $sheet->getColumnDimension($colLetter)->setWidth(18); // Kolom Nilai
+                $sheet->getColumnDimension($colLetter)->setWidth(18); // Kolom Nilai (B, D, F...)
             }
         }
-        // Khusus Kolom C tetap diberikan lebar sedikit berbeda jika diperlukan, 
-        // tapi di sini disamakan (25) agar grid summary simetris.
 
         $row = 1;
 
@@ -134,10 +131,17 @@ class UtilizationReportController extends Controller
         $sheet->mergeCells('A' . $row . ':E' . $row);
         $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(20);
         $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+        $row++;
+
+        // PERIODE (DITAMBAHKAN KEMBALI)
+        $periodeText = 'Periode: ' . $utilization->periode_mulai->translatedFormat('d F Y') . ' - ' . $utilization->periode_selesai->translatedFormat('d F Y');
+        $sheet->setCellValue('A' . $row, $periodeText);
+        $sheet->mergeCells('A' . $row . ':E' . $row);
+        $sheet->getStyle('A' . $row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $row += 2;
 
         foreach ($utilization->sections as $section) {
-            // --- SECTION HIGHLIGHT ---
+            // --- SECTION HIGHLIGHT (BOX KECIL DI KIRI SEPERTI PREVIEW) ---
             $sheet->setCellValue('A' . $row, ' ' . $section->nama_section);
             $sheet->mergeCells('A' . $row . ':B' . $row); 
             $sheet->getStyle('A' . $row)->getFont()->setBold(true)->setSize(14);
@@ -153,7 +157,7 @@ class UtilizationReportController extends Controller
 
                 foreach ($chunk as $index => $item) {
                     $isLeft = ($index % 2 == 0);
-                    // Gunakan Kolom A untuk kiri, Kolom D untuk kanan (sesuai request foto bagus)
+                    // Area Foto tetap di A dan D (dengan C sebagai spacer lebar)
                     $col = $isLeft ? 'A' : 'D';
 
                     if ($item->gambar_graph && Storage::disk('public')->exists($item->gambar_graph)) {
@@ -174,6 +178,7 @@ class UtilizationReportController extends Controller
                     $colL = $isLeft ? 'A' : 'D';
                     $colV = $isLeft ? 'B' : 'E';
 
+                    // Nama Label Bold tepat di bawah foto
                     $sheet->setCellValue($colL . $row, $item->label ?? '-');
                     $sheet->getStyle($colL . $row)->getFont()->setBold(true);
 
@@ -182,6 +187,7 @@ class UtilizationReportController extends Controller
                         return str_contains(strtolower($val), 'mbps') ? $val : $val . ' Mbps';
                     };
 
+                    // Data Row Inbound/Outbound
                     $sheet->setCellValue($colL . ($row + 1), 'INBOUND');
                     $sheet->setCellValue($colV . ($row + 1), $formatMbps($item->inbound_value));
                     
@@ -194,7 +200,7 @@ class UtilizationReportController extends Controller
                 $row += 5; 
             }
 
-            // --- SUMMARY SECTION (REVISI: UKURAN SERAGAM & TIDAK TERPOTONG) ---
+            // --- SUMMARY SECTION (DISATUKAN & UKURAN SERAGAM) ---
             if ($section->summaries->count() > 0) {
                 $row++;
                 $headerRow = $row;
@@ -204,36 +210,31 @@ class UtilizationReportController extends Controller
                     $c1 = $this->getColLetter($startColIdx);
                     $c2 = $this->getColLetter($startColIdx + 1);
 
-                    // Header Tabel Summary
+                    // Header Summary
                     $sheet->setCellValue($c1 . $headerRow, $summary->kategori);
                     $sheet->mergeCells($c1 . $headerRow . ':' . $c2 . $headerRow);
                     $sheet->getStyle($c1 . $headerRow . ':' . $c2 . $headerRow)->applyFromArray([
                         'font' => ['bold' => true],
-                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+                        'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER],
                         'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['argb' => 'F4A460']],
                         'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
                     ]);
 
-                    // Baris INBOUND
+                    // Data Inbound
                     $sheet->setCellValue($c1 . ($headerRow + 1), '  INBOUND');
                     $sheet->setCellValue($c2 . ($headerRow + 1), $summary->inbound_value);
-                    $sheet->getStyle($c1 . ($headerRow + 1) . ':' . $c2 . ($headerRow + 1))->applyFromArray([
-                        'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
-                        'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
-                    ]);
+                    $sheet->getStyle($c1 . ($headerRow + 1) . ':' . $c2 . ($headerRow + 1))
+                        ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                     $sheet->getStyle($c2 . ($headerRow + 1))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                    // Baris OUTBOUND
+                    // Data Outbound
                     $sheet->setCellValue($c1 . ($headerRow + 2), '  OUTBOUND');
                     $sheet->setCellValue($c2 . ($headerRow + 2), $summary->outbound_value);
-                    $sheet->getStyle($c1 . ($headerRow + 2) . ':' . $c2 . ($headerRow + 2))->applyFromArray([
-                        'alignment' => ['vertical' => Alignment::VERTICAL_CENTER],
-                        'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]]
-                    ]);
+                    $sheet->getStyle($c1 . ($headerRow + 2) . ':' . $c2 . ($headerRow + 2))
+                        ->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
                     $sheet->getStyle($c2 . ($headerRow + 2))->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
-                    // Pindah ke kolom berikutnya tanpa loncat (startColIdx += 2) agar tabel menyatu
-                    $startColIdx += 2; 
+                    $startColIdx += 2; // Tabel menyatu tanpa gap
                 }
                 $row += 4;
             }
