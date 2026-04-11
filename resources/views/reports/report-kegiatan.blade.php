@@ -568,7 +568,7 @@
 
           <div class="field">
             <label>Waktu Kegiatan <span class="req">*</span></label>
-            <input name="waktu_kegiatan" value="{{ old('waktu_kegiatan') }}" placeholder="Contoh: 12 Januari 2026, 09:00 WIB" required>
+            <input type="datetime-local" name="waktu_kegiatan" value="{{ old('waktu_kegiatan') }}" required>
           </div>
         </div>
 
@@ -618,17 +618,18 @@
             
               <div class="row-left">
                 <div class="field">
-                  <label>Deskripsi</label>
+                  <label>Deskripsi <span class="req">*</span></label>
               
                   <input name="items[{{ $idx }}][deskripsi]"
                          value="{{ old("items.$idx.deskripsi", $row['deskripsi'] ?? '') }}"
-                         placeholder="Jelaskan item yang dicek...">
+                         placeholder="Jelaskan item yang dicek..."
+                         required>
                 </div>
 
                 <div class="two">
                   <div class="field">
-                    <label>Kondisi</label>
-                    <select name="items[{{ $idx }}][kondisi]">
+                    <label>Kondisi <span class="req">*</span></label>
+                    <select name="items[{{ $idx }}][kondisi]" required>
                       <option value="">-- Pilih Kondisi --</option>
                       <option value="baik" {{ old("items.$idx.kondisi", $row['kondisi'] ?? '')=='baik'?'selected':'' }}>Baik</option>
                       <option value="problem" {{ old("items.$idx.kondisi", $row['kondisi'] ?? '')=='problem'?'selected':'' }}>Problem</option>
@@ -646,8 +647,8 @@
 
               
               <div class="row-right">
-                <label>Dokumentasi Foto</label>
-                <input class="photosInput" type="file" name="item_photos[{{ $idx }}][]" multiple accept="image/*">
+                <label>Dokumentasi Foto <span class="req">*</span></label>
+                <input class="photosInput" type="file" name="item_photos[{{ $idx }}][]" multiple accept="image/*" required>
                 <div class="preview-grid previews"></div>
               </div>
             </div>

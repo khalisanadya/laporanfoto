@@ -206,8 +206,9 @@ class ReportController extends Controller
         
         return view('dashboard', compact(
             'totalReports', 
-            'kondisiBaik', 
-            'kondisiProblem', 
+            'reportCount',
+            'bapCount',
+            'utilizationCount',
             'bulanIni', 
             'allItemsPaginated',
             'availableMonths',

@@ -12,7 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('reports', function (Blueprint $table) {
-            $table->string('device_id', 64)->nullable()->after('id')->index();
+            // Hanya tambah jika belum ada
+            if (!Schema::hasColumn('reports', 'device_id')) {
+                $table->string('device_id', 64)->nullable()->after('id')->index();
+            }
         });
     }
 
@@ -22,7 +25,9 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('reports', function (Blueprint $table) {
-            $table->dropColumn('device_id');
+            if (Schema::hasColumn('reports', 'device_id')) {
+                $table->dropColumn('device_id');
+            }
         });
     }
 };

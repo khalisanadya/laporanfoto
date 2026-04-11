@@ -6,7 +6,7 @@
 @section('styles')
   .stats-grid{
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     gap: 20px;
     margin-bottom: 28px;
   }
@@ -357,15 +357,21 @@
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon green">✓</div>
-    <div class="stat-value">{{ $kondisiBaik }}</div>
-    <div class="stat-label">Kondisi Baik</div>
+    <div class="stat-icon green">≣</div>
+    <div class="stat-value">{{ $reportCount }}</div>
+    <div class="stat-label">Report Kegiatan</div>
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon red">!</div>
-    <div class="stat-value">{{ $kondisiProblem }}</div>
-    <div class="stat-label">Kondisi Problem</div>
+    <div class="stat-icon blue">⊡</div>
+    <div class="stat-value">{{ $bapCount }}</div>
+    <div class="stat-label">BAP</div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon yellow">∴</div>
+    <div class="stat-value">{{ $utilizationCount }}</div>
+    <div class="stat-label">Utilization</div>
   </div>
 
   <div class="stat-card">

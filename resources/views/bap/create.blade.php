@@ -125,7 +125,7 @@
 
     <!-- Info Box - Data yang sudah fix -->
     <div class="info-box">
-      <div class="info-box-title">Informasi Tetap (Tidak Perlu Diisi)</div>
+      <div class="info-box-title">Informasi Tetap </div>
       <div class="info-box-content">
         <div class="info-item">
           <strong>Nama Pekerjaan</strong>

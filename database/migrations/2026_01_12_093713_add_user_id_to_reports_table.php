@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('reports', function (Blueprint $table) {
-            //
+            // Migration kosong - tidak ada perubahan
         });
     }
 

@@ -270,7 +270,7 @@
       <div class="empty-state-icon">≡</div>
       <h3>Belum Ada Laporan</h3>
       <p>Mulai buat laporan kegiatan pertama kamu</p>
-      <a href="{{ route('reports.create') }}" class="btn btn-primary">Buat Laporan Baru</a>
+
     </div>
   @endif
 </div>

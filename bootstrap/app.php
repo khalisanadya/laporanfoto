@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\DeviceIdentifier::class,
         ]);
         
+        $middleware->alias([
+            'auth' => \App\Http\Middleware\Authenticate::class,
+            'guest' => \App\Http\Middleware\Guest::class,
+        ]);
+        
         // Exclude cookies from encryption
         $middleware->encryptCookies(except: ['my_reports', 'my_baps']);
     })
