@@ -204,7 +204,6 @@
   <div class="login-container">
     <div class="login-card">
       <div class="login-header">
-        <div class="login-icon">🔐</div>
         <h1 class="login-title">Login</h1>
         <p class="login-subtitle">Sistem Laporan Foto PGN</p>
       </div>
@@ -252,18 +251,6 @@
 
         <button type="submit" class="btn-login">Login Sekarang</button>
       </form>
-
-      <div class="demo-info">
-        <div class="demo-info-title">Demo Credentials</div>
-        <div class="demo-credential">
-          <span class="demo-label">Email:</span>
-          <span>demo@example.com</span>
-        </div>
-        <div class="demo-credential">
-          <span class="demo-label">Password:</span>
-          <span>password</span>
-        </div>
-      </div>
     </div>
   </div>
 </body>

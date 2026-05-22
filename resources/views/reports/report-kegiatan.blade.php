@@ -602,7 +602,7 @@
 
       <div class="rows" id="rows">
        
-        @php $initial = old('items') ?? array_fill(0, 4, ['deskripsi'=>'','kondisi'=>'','catatan'=>'']); @endphp
+        @php $initial = old('items') ?? array_fill(0, 1, ['deskripsi'=>'','kondisi'=>'','catatan'=>'']); @endphp
 
         @foreach($initial as $idx => $row)
           <div class="row" data-row="{{ $idx }}">

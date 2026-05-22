@@ -279,17 +279,11 @@ class ReportController extends Controller
             'photo_captions' => ['nullable', 'array'],
         ]);
 
-        $title = $validated['nama_kegiatan']
-            ?? $validated['jenis_kegiatan']
-            ?? 'Report';
-
-    
         $report = Report::create([
             'nama_kegiatan'   => $validated['nama_kegiatan'] ?? null,
             'waktu_kegiatan'  => $validated['waktu_kegiatan'] ?? null,
             'jenis_kegiatan'  => $validated['jenis_kegiatan'] ?? null,
             'lokasi_kegiatan' => $validated['lokasi_kegiatan'] ?? null,
-            'title'           => $title,
         ]);
 
         $items = collect($validated['items'] ?? [])
