@@ -249,6 +249,39 @@
     font-size: 16px;
   }
 
+  .sidebar-logout-btn{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .2s ease;
+    font-family: inherit;
+    margin-bottom: 12px;
+  }
+
+  .sidebar-logout-btn:hover{
+    background: rgba(255,0,0,.3);
+    border-color: rgba(255,0,0,.4);
+  }
+
+  .sidebar-logout-icon{
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+  }
+
   .sidebar-footer{
     padding: 16px 20px;
     border-top: 1px solid rgba(255,255,255,.1);
@@ -487,6 +520,13 @@
       </div>
     </div>
   </nav>
+
+  <form action="{{ route('logout') }}" method="POST" style="padding: 12px 20px; border-top: 1px solid rgba(255,255,255,.1);">
+    @csrf
+    <button type="submit" class="sidebar-logout-btn">
+      Logout
+    </button>
+  </form>
 
   <div class="sidebar-footer">
     &copy; {{ date('Y') }} Report System
